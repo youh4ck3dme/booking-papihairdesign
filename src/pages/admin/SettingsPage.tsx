@@ -100,9 +100,10 @@ export default function SettingsPage() {
   const saveBookingSettings = async () => {
     if (!business) return;
     setSaving(true);
-    const { error } = await supabase
-      .from("businesses")
-      .update({ allow_admin_as_provider: business.allow_admin_as_provider })
+    const allowAdminAsProvider = Boolean((business as any)?.allow_admin_as_provider);
+    const { error } = await (supabase
+      .from("businesses") as any)
+      .update({ allow_admin_as_provider: allowAdminAsProvider })
       .eq("id", businessId);
     setSaving(false);
     if (error) {
