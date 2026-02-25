@@ -177,9 +177,9 @@ export default function BookingPage() {
     }
 
     // Filter admins/owners based on allow_admin_as_provider setting
-    if (!business?.allow_admin_as_provider) {
-      result = result.filter(emp => {
-        // If no profile_id, employee is not linked to a user - always allow
+    const allowAdminAsProvider = Boolean((business as any)?.allow_admin_as_provider);
+    if (!allowAdminAsProvider) {
+      result = result.filter((emp) => {
         if (!emp.profile_id) return true;
         // Find membership for this employee's profile
         const membership = memberships.find(m => m.profile_id === emp.profile_id);
