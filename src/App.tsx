@@ -35,6 +35,7 @@ const ReceptionPage = lazy(() => import("./pages/ReceptionPage"));
 const DiagnosticsPage = lazy(() => import("./pages/DiagnosticsPage"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
 
 const LazyFallback = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -65,7 +66,8 @@ const App = () => (
               <Route path="/diagnostics" element={<DiagnosticsPage />} />
               <Route path="/privacy" element={<PrivacyPage />} />
               <Route path="/privacy-policy" element={<TermsPage />} />
-              <Route path="/terms" element={<TermsPage />} />
+               <Route path="/terms" element={<TermsPage />} />
+               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route
                 path="/reception"
                 element={
