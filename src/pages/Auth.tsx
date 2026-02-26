@@ -1,12 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { getFirebaseAuth, isFirebaseAuthEnabled } from "@/integrations/firebase/config";
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  sendPasswordResetEmail,
-} from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,21 +59,6 @@ export default function AuthPage() {
     }
     setErrors({});
     setLoading(true);
-    if (isFirebaseAuthEnabled()) {
-      const auth = getFirebaseAuth();
-      if (!auth) { setLoading(false); return; }
-      try {
-        await signInWithEmailAndPassword(auth, form.email, form.password);
-        if (!rememberMe) sessionStorage.setItem("auth_session_tab_only", "true");
-        else sessionStorage.removeItem("auth_session_tab_only");
-        navigate("/admin");
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : "Prihlásenie zlyhalo";
-        toast.error(msg);
-      }
-      setLoading(false);
-      return;
-    }
     const { error } = await supabase.auth.signInWithPassword({ email: form.email, password: form.password });
     setLoading(false);
     if (error) { toast.error("Prihlásenie zlyhalo: " + error.message); return; }
@@ -99,20 +78,6 @@ export default function AuthPage() {
     }
     setErrors({});
     setLoading(true);
-    if (isFirebaseAuthEnabled()) {
-      const auth = getFirebaseAuth();
-      if (!auth) { setLoading(false); return; }
-      try {
-        await createUserWithEmailAndPassword(auth, form.email, form.password);
-        toast.success("Registrácia úspešná.");
-        navigate("/admin");
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : "Registrácia zlyhala";
-        toast.error(msg);
-      }
-      setLoading(false);
-      return;
-    }
     const { data: signUpData, error } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
@@ -139,19 +104,6 @@ export default function AuthPage() {
     e.preventDefault();
     if (!form.email) { setErrors({ email: "Zadajte email" }); return; }
     setLoading(true);
-    if (isFirebaseAuthEnabled()) {
-      const auth = getFirebaseAuth();
-      if (!auth) { setLoading(false); return; }
-      try {
-        await sendPasswordResetEmail(auth, form.email);
-        toast.success("Email na obnovenie hesla bol odoslaný");
-        setMode("login");
-      } catch (err: unknown) {
-        toast.error(err instanceof Error ? err.message : "Odoslanie zlyhalo");
-      }
-      setLoading(false);
-      return;
-    }
     const { error } = await supabase.auth.resetPasswordForEmail(form.email, {
       redirectTo: window.location.origin + "/reset-password",
     });
@@ -160,8 +112,6 @@ export default function AuthPage() {
     toast.success("Email na obnovenie hesla bol odoslaný");
     setMode("login");
   };
-
-  const isLoading = loading;
 
   return (
     <div className="min-h-[100dvh] flex items-center justify-center bg-gradient-to-br from-secondary to-background p-4 safe-x safe-y relative overflow-x-hidden">
@@ -191,19 +141,18 @@ export default function AuthPage() {
             <form onSubmit={mode === "login" ? handleLogin : mode === "register" ? handleRegister : handleForgot} className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="jana@example.sk" value={form.email} onChange={set("email")} disabled={isLoading} />
+                <Input id="email" type="email" placeholder="jana@example.sk" value={form.email} onChange={set("email")} disabled={loading} />
                 {errors.email && <p className="text-destructive text-xs">{errors.email}</p>}
               </div>
 
               {mode !== "forgot" && (
                 <div className="space-y-1.5">
                   <Label htmlFor="password">Heslo</Label>
-                  <Input id="password" type="password" placeholder="••••••••" value={form.password} onChange={set("password")} disabled={isLoading} />
+                  <Input id="password" type="password" placeholder="••••••••" value={form.password} onChange={set("password")} disabled={loading} />
                   {errors.password && <p className="text-destructive text-xs">{errors.password}</p>}
                 </div>
               )}
 
-              {/* Remember me checkbox - only on login */}
               {mode === "login" && (
                 <div className="flex items-center space-x-2">
                   <Checkbox
@@ -217,8 +166,8 @@ export default function AuthPage() {
                 </div>
               )}
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 {mode === "login" ? "Prihlásiť sa" : mode === "register" ? "Zaregistrovať sa" : "Odoslať email"}
               </Button>
             </form>
