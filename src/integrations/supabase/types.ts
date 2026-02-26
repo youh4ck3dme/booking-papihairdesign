@@ -707,6 +707,7 @@ export type Database = {
         Args: { _business_id: string; _user_id: string }
         Returns: string
       }
+      get_smtp_config_safe: { Args: { _business_id: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
