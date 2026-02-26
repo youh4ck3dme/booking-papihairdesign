@@ -26,19 +26,23 @@ export default function SettingsPage() {
   }, [profile]);
 
   useEffect(() => {
-    // Load business WITHOUT smtp_config – passwords should never reach the client
-    supabase.from("businesses").select("id, name, address, phone, email, timezone, lead_time_minutes, max_days_ahead, cancellation_hours, onboarding_completed, opening_hours, logo_url, slug, smtp_config, allow_admin_as_provider").eq("id", businessId).single().then(({ data }) => {
+    // Load business WITHOUT smtp_config – passwords never reach the client
+    supabase.from("businesses").select("id, name, address, phone, email, timezone, lead_time_minutes, max_days_ahead, cancellation_hours, onboarding_completed, opening_hours, logo_url, slug").eq("id", businessId).single().then(({ data }) => {
+      if (data) setBusiness(data);
+    });
+
+    // Load SMTP config via safe RPC (no password exposed)
+    supabase.rpc("get_smtp_config_safe", { _business_id: businessId }).then(({ data }) => {
       if (data) {
-        setBusiness(data);
-        const smtp = (data as any).smtp_config as any ?? {};
+        const smtp = data as any;
         setSmtpForm({
           host: smtp.host ?? "",
           port: smtp.port ?? "",
           user: smtp.user ?? "",
           from: smtp.from ?? "",
-          pass: "", // Never load actual password to client
+          pass: "",
         });
-        setSmtpHasPassword(!!(smtp.pass));
+        setSmtpHasPassword(!!smtp.has_password);
       }
     });
   }, [businessId]);
