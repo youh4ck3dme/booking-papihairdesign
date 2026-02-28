@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { LogoIcon } from "@/components/LogoIcon";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { OAuthButtons } from "@/components/auth/OAuthButtons";
 import { z } from "zod";
 
 const loginSchema = z.object({
@@ -171,6 +172,8 @@ export default function AuthPage() {
                 {mode === "login" ? "Prihlásiť sa" : mode === "register" ? "Zaregistrovať sa" : "Odoslať email"}
               </Button>
             </form>
+
+            {mode !== "forgot" && <OAuthButtons disabled={loading} />}
 
             <div className="text-center text-sm space-y-2">
               {mode === "login" && (
