@@ -61,27 +61,27 @@ export const SignupEmail = ({
 
 export default SignupEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif" }
-const container = { padding: '32px 28px', maxWidth: '480px', margin: '0 auto' }
+const main = { backgroundColor: '#000000', fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif" }
+const container = { padding: '32px 28px', maxWidth: '480px', margin: '0 auto', backgroundColor: '#000000' }
 const logoSection = { textAlign: 'center' as const, marginBottom: '24px' }
 const logo = { borderRadius: '50%', display: 'inline-block' }
 const h1 = {
   fontSize: '22px',
   fontWeight: 'bold' as const,
-  color: '#1D1814',
+  color: '#C8962E',
   margin: '0 0 16px',
   textAlign: 'center' as const,
 }
 const text = {
   fontSize: '14px',
-  color: '#6E6461',
+  color: '#A8A8A8',
   lineHeight: '1.6',
   margin: '0 0 24px',
 }
 const link = { color: '#C8962E', textDecoration: 'underline' }
 const button = {
   backgroundColor: '#C8962E',
-  color: '#ffffff',
+  color: '#000000',
   fontSize: '14px',
   fontWeight: '600' as const,
   borderRadius: '10px',
@@ -90,5 +90,5 @@ const button = {
   display: 'block',
   textAlign: 'center' as const,
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '28px 0 0' }
+const footer = { fontSize: '12px', color: '#666666', margin: '28px 0 0' }
 const brand = { fontSize: '11px', color: '#C8962E', margin: '12px 0 0', textAlign: 'center' as const }
