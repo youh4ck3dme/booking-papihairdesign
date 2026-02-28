@@ -1,38 +1,31 @@
-# Konfiguracny subor – NEVKLADAT do terminalu. Push do cloudu: .\supabase-push-auth-config.ps1
 project_id = "eudwjgdijylsgcnncxeg"
 
 [auth]
-site_url = "https://booking.papihairdesign.sk"
-additional_redirect_urls = ["https://booking.papihairdesign.sk/**"]
+  additional_redirect_urls = ["https://booking.papihairdesign.sk/**"]
+  site_url = "https://booking.papihairdesign.sk"
+  [auth.third_party]
+    [auth.third_party.firebase]
+      enabled = true
+      project_id = "your-firebase-project-id"
 
-# Firebase ako Third-Party Auth (doplň project_id z Firebase Console)
-[auth.third_party.firebase]
-enabled = true
-project_id = "your-firebase-project-id"
-
-[functions.create-public-booking]
-verify_jwt = false
-
-[functions.claim-booking]
-verify_jwt = false
-
-[functions.sync-push]
-verify_jwt = false
-
-[functions.sync-pull]
-verify_jwt = false
-
-[functions.webauthn-register]
-verify_jwt = false
-
-[functions.webauthn-authenticate]
-verify_jwt = false
-
-[functions.send-booking-email]
-verify_jwt = false
-
-[functions.save-smtp-config]
-verify_jwt = false
-
-[functions.seed-demo-accounts]
-verify_jwt = false
+[functions]
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.claim-booking]
+    verify_jwt = false
+  [functions.create-public-booking]
+    verify_jwt = false
+  [functions.save-smtp-config]
+    verify_jwt = false
+  [functions.seed-demo-accounts]
+    verify_jwt = false
+  [functions.send-booking-email]
+    verify_jwt = false
+  [functions.sync-pull]
+    verify_jwt = false
+  [functions.sync-push]
+    verify_jwt = false
+  [functions.webauthn-authenticate]
+    verify_jwt = false
+  [functions.webauthn-register]
+    verify_jwt = false
