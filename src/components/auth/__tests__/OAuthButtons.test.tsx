@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
 
 // Mock lovable auth
@@ -18,26 +18,26 @@ vi.mock("sonner", () => ({
 
 describe("OAuthButtons", () => {
   it("renders Google and Apple buttons", () => {
-    render(<OAuthButtons />);
-    expect(screen.getByText("Prihlásiť sa cez Google")).toBeInTheDocument();
-    expect(screen.getByText("Prihlásiť sa cez Apple")).toBeInTheDocument();
+    const { getByText } = render(<OAuthButtons />);
+    expect(getByText("Prihlásiť sa cez Google")).toBeInTheDocument();
+    expect(getByText("Prihlásiť sa cez Apple")).toBeInTheDocument();
   });
 
   it("renders divider text", () => {
-    render(<OAuthButtons />);
-    expect(screen.getByText("alebo")).toBeInTheDocument();
+    const { getByText } = render(<OAuthButtons />);
+    expect(getByText("alebo")).toBeInTheDocument();
   });
 
   it("disables buttons when disabled prop is true", () => {
-    render(<OAuthButtons disabled />);
-    const buttons = screen.getAllByRole("button");
+    const { getAllByRole } = render(<OAuthButtons disabled />);
+    const buttons = getAllByRole("button");
     buttons.forEach((btn) => expect(btn).toBeDisabled());
   });
 
   it("calls signInWithOAuth with google on click", async () => {
     const { lovable } = await import("@/integrations/lovable/index");
-    render(<OAuthButtons />);
-    fireEvent.click(screen.getByText("Prihlásiť sa cez Google"));
+    const { getByText } = render(<OAuthButtons />);
+    getByText("Prihlásiť sa cez Google").click();
     expect(lovable.auth.signInWithOAuth).toHaveBeenCalledWith("google", {
       redirect_uri: "http://localhost:3000",
     });
@@ -45,8 +45,8 @@ describe("OAuthButtons", () => {
 
   it("calls signInWithOAuth with apple on click", async () => {
     const { lovable } = await import("@/integrations/lovable/index");
-    render(<OAuthButtons />);
-    fireEvent.click(screen.getByText("Prihlásiť sa cez Apple"));
+    const { getByText } = render(<OAuthButtons />);
+    getByText("Prihlásiť sa cez Apple").click();
     expect(lovable.auth.signInWithOAuth).toHaveBeenCalledWith("apple", {
       redirect_uri: "http://localhost:3000",
     });
@@ -58,9 +58,8 @@ describe("OAuthButtons", () => {
     (lovable.auth.signInWithOAuth as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       error: new Error("fail"),
     });
-    render(<OAuthButtons />);
-    fireEvent.click(screen.getByText("Prihlásiť sa cez Google"));
-    // Wait for async
+    const { getByText } = render(<OAuthButtons />);
+    getByText("Prihlásiť sa cez Google").click();
     await vi.waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Prihlásenie cez Google zlyhalo");
     });
