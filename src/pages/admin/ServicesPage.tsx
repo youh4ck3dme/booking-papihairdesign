@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Loader2, Plus, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, Sparkles } from "lucide-react";
 import { LogoIcon } from "@/components/LogoIcon";
+import { Textarea } from "@/components/ui/textarea";
 import { z } from "zod";
 
 const serviceSchema = z.object({
@@ -31,6 +32,31 @@ export default function ServicesPage() {
   const [form, setForm] = useState<ServiceForm>(emptyForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
+
+  const handleGenerateDescription = async () => {
+    if (!form.name_sk || form.name_sk.length < 2) {
+      toast.error("Najprv zadajte názov služby");
+      return;
+    }
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-service-description", {
+        body: { service_name: form.name_sk, duration_minutes: form.duration_minutes, price: form.price },
+      });
+      if (error) throw error;
+      if (data?.error) { toast.error(data.error); return; }
+      if (data?.description) {
+        setForm((f) => ({ ...f, description_sk: data.description }));
+        toast.success("Popis vygenerovaný");
+      }
+    } catch (e: any) {
+      toast.error("Nepodarilo sa vygenerovať popis");
+      console.error(e);
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -143,8 +169,27 @@ export default function ServicesPage() {
               {errors.name_sk && <p className="text-destructive text-xs">{errors.name_sk}</p>}
             </div>
             <div className="space-y-1.5">
-              <Label>Popis (voliteľný)</Label>
-              <Input value={form.description_sk} onChange={(e) => setForm((f) => ({ ...f, description_sk: e.target.value }))} placeholder="Krátky popis..." />
+              <div className="flex items-center justify-between">
+                <Label>Popis (voliteľný)</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs gap-1 text-primary"
+                  onClick={handleGenerateDescription}
+                  disabled={generating || !form.name_sk || form.name_sk.length < 2}
+                >
+                  {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                  AI popis
+                </Button>
+              </div>
+              <Textarea
+                value={form.description_sk}
+                onChange={(e) => setForm((f) => ({ ...f, description_sk: e.target.value }))}
+                placeholder="Krátky popis..."
+                rows={2}
+                className="resize-none"
+              />
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1.5">

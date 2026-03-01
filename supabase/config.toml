@@ -29,3 +29,5 @@ project_id = "eudwjgdijylsgcnncxeg"
     verify_jwt = false
   [functions.webauthn-register]
     verify_jwt = false
+  [functions.generate-service-description]
+    verify_jwt = false
