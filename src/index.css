@@ -1,11 +1,14 @@
+@import './brand-fonts.css';
+@import './reference-brand.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 40 20% 97%;
-    --foreground: 20 15% 10%;
+    --background: 60 12% 97%;
+    --foreground: 0 0% 10%;
 
     --card: 40 15% 99%;
     --card-foreground: 20 15% 10%;
@@ -13,7 +16,7 @@
     --popover: 40 15% 99%;
     --popover-foreground: 20 15% 10%;
 
-    --primary: 43 74% 49%;
+    --primary: 43 50% 56%;
     --primary-foreground: 20 15% 10%;
 
     --secondary: 38 18% 92%;
@@ -34,7 +37,7 @@
 
     --radius: 0.625rem;
 
-    --gold: 43 74% 49%;
+    --gold: 43 50% 56%;
     --gold-foreground: 20 15% 10%;
 
     --sidebar-background: 40 20% 97%;
@@ -128,13 +131,13 @@
 .booking-offer { scroll-margin-top: 5rem; animation: booking-offer-reveal 280ms ease-out both; }
 @keyframes booking-offer-reveal { from { opacity: 0; transform: translateY(14px) scale(0.985); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .booking-offer { animation: none; } }
-.text-primary { color: #82600c; }
+.text-primary { color: var(--papi-gold-ink); }
 
-.language-control { display:inline-flex; gap:4px; padding:4px; border:1px solid #e0dcd6; border-radius:8px; background:#fcfcfb; flex-shrink:0; }
-.language-control button { min-width:44px; min-height:44px; padding:8px 10px; border:0; border-radius:6px; background:transparent; color:#70685f; font:600 12px/1.2 Arial,sans-serif; cursor:pointer; }
-.language-control button[aria-pressed="true"] { background:#d9a521; color:#24201d; }
-.language-control button:hover { color:#24201d; }
-.language-control button:focus-visible { outline:2px solid #82600c; outline-offset:2px; }
+.language-control { display:inline-flex; gap:4px; padding:4px; border:1px solid var(--papi-gold-edge); border-radius:999px; background:var(--papi-paper); flex-shrink:0; box-shadow:0 2px 6px rgb(82 61 22 / 8%); }
+.language-control button { min-width:44px; min-height:44px; padding:8px 10px; border:0; border-radius:999px; background:transparent; color:var(--papi-muted); font:600 12px/1.2 var(--font-ui); cursor:pointer; }
+.language-control button[aria-pressed="true"] { background:var(--papi-metal); color:var(--papi-ink); box-shadow:var(--papi-control-shadow); }
+.language-control button:hover { color:var(--papi-ink); }
+.language-control button:focus-visible { outline:2px solid var(--papi-gold-ink); outline-offset:2px; }
 .booking-choice:has(input:focus-visible) { outline:2px solid #82600c; outline-offset:3px; }
 
 /* Body owns safe-area padding once; the booking shell fills the remaining area. */

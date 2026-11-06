@@ -25,6 +25,10 @@ for (const [width, height] of [[320,568],[390,844],[844,390],[768,1024],[1440,90
     });
     await page.goto('/booking?lang=sk');
     await expect(page.getByRole('heading', { name: 'Vyberte kategóriu' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Vyberte kategóriu' })).toHaveCSS('font-family', /Bodoni Moda/);
+    const headingFonts = await page.evaluate(() => document.fonts.load('500 24px "Bodoni Moda"', 'PAPI ĽŠŤŽÁÉÍÓÚÝČĎŇÔÄŔĹ').then(fonts => fonts.map(font => font.status)));
+    expect(headingFonts.length).toBeGreaterThan(0);
+    expect(headingFonts.every(status => status === 'loaded')).toBe(true);
     await expect(page.locator('html')).not.toHaveClass(/dark/);
     const english = page.getByRole('button', { name: 'Switch to English', exact: true });
     await english.focus();

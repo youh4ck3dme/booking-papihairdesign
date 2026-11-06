@@ -1,0 +1,51 @@
+/* Brand system derived from the supplied PAPI BOOKING reference; keep both apps identical. */
+:root {
+  --papi-paper: #fcfcfb;
+  --papi-canvas: #f8f8f6;
+  --papi-ink: #191919;
+  --papi-muted: #67625a;
+  --papi-line: #ddd7cb;
+  --papi-gold: #c8a858;
+  --papi-gold-rgb: 200 168 88;
+  --papi-gold-ink: #785b22;
+  --papi-gold-soft: #f5edda;
+  --papi-gold-edge: #a48442;
+  --papi-metal: linear-gradient(175deg, #b99a56 0%, #f4e2ac 24%, #d7b96c 46%, #c5a458 52%, #ead597 77%, #c8a858 100%);
+  --papi-control-radius: 999px;
+  --papi-control-shadow: inset 0 1px 0 rgb(255 255 255 / 75%), inset 0 -1px 0 rgb(97 69 19 / 18%), 0 3px 8px rgb(82 61 22 / 12%);
+  --font-ui: 'Inter', Arial, sans-serif;
+  --font-primary: var(--font-ui);
+  --font-heading: 'Bodoni Moda', Didot, 'Times New Roman', serif;
+}
+
+body { font-family: var(--font-ui); color: var(--papi-ink); background-color: var(--papi-canvas); }
+/* The explicit family rule covers component styles, utility classes and rich article HTML. */
+:is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-heading) !important;
+  font-optical-sizing: auto;
+  font-weight: 500 !important;
+  font-synthesis: none;
+  letter-spacing: 0.015em !important;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+:is(h1, h2) { line-height: 1.18; }
+:is(h3, h4, h5, h6) { font-weight: 600 !important; line-height: 1.3; }
+html h4 { font-size: 1.125rem; }
+html h5 { font-size: 1rem; }
+html h6 { font-size: 0.9375rem; }
+:is(h1, h2, h3, h4, h5, h6) > :is(a, button, span, strong, em) { font-family: inherit !important; }
+:is(button, input, textarea, select) { font-family: var(--font-ui); }
+:is(button, a)[class~="bg-gold"], :is(button, a)[class~="bg-primary"], .home-button--primary {
+  background: var(--papi-metal);
+  color: var(--papi-ink);
+  border-color: var(--papi-gold-edge);
+  box-shadow: var(--papi-control-shadow);
+  border-radius: var(--papi-control-radius);
+}
+:is(button, a)[class~="bg-gold"]:hover, :is(button, a)[class~="bg-primary"]:hover, .home-button--primary:hover {
+  background: var(--papi-metal);
+  filter: brightness(1.035);
+}
+:is(button, a)[class~="bg-gold"]:disabled, :is(button, a)[class~="bg-primary"]:disabled { filter: none; }
+::selection { background: var(--papi-gold-soft); color: var(--papi-ink); }
