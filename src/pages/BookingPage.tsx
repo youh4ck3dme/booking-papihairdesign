@@ -76,7 +76,15 @@ export default function BookingPage() {
   // Booking states
   const [category, setCategory] = useState<"damske" | "panske">("damske");
   const [subcategory, setSubcategory] = useState<string | null>(null);
-  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
+  const [serviceSelection, setServiceSelection] = useState<{ id: string | null; revision: number }>({ id: null, revision: 0 });
+  const [loadedEmployeesScope, setLoadedEmployeesScope] = useState<{ serviceId: string; revision: number } | null>(null);
+  const selectedServiceId = serviceSelection.id;
+  const setSelectedServiceId = useCallback((id: string | null) => {
+    // Invalidate during the event/render transition, not in a later passive effect.
+    // Revision also prevents a cleared and reselected identical service using old rows.
+    setLoadedEmployeesScope(null);
+    setServiceSelection(previous => ({ id, revision: previous.revision + 1 }));
+  }, []);
   const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
@@ -151,20 +159,30 @@ export default function BookingPage() {
         _business_id: DEMO_BUSINESS_ID, _service_id: selectedServiceId,
       }).abortSignal(controller.signal);
       if (controller.signal.aborted) return;
-      if (error) { toast.error(t("Chyba pri komunikácii so serverom")); return; }
+      if (error) {
+        setLoadedEmployeesScope({ serviceId: selectedServiceId, revision: serviceSelection.revision });
+        toast.error(t("Chyba pri komunikácii so serverom")); return;
+      }
       const rows = data ?? [];
       setEmployees(rows);
-      if (!rows.length) return;
+      if (!rows.length) {
+        setLoadedEmployeesScope({ serviceId: selectedServiceId, revision: serviceSelection.revision });
+        return;
+      }
       const { data: scheduleRows, error: scheduleError } = await supabase.from("schedules").select("*").in("employee_id", rows.map(employee => employee.id)).abortSignal(controller.signal);
       if (controller.signal.aborted) return;
-      if (scheduleError) { toast.error(t("Chyba pri komunikácii so serverom")); return; }
+      if (scheduleError) {
+        setLoadedEmployeesScope({ serviceId: selectedServiceId, revision: serviceSelection.revision });
+        toast.error(t("Chyba pri komunikácii so serverom")); return;
+      }
       const map: Record<string, EmployeeSchedule[]> = {};
       (scheduleRows ?? []).forEach(schedule => { (map[schedule.employee_id] ??= []).push(schedule); });
       setSchedules(map);
+      setLoadedEmployeesScope({ serviceId: selectedServiceId, revision: serviceSelection.revision });
     };
     void loadServiceEmployees();
     return () => controller.abort();
-  }, [selectedServiceId]);
+  }, [selectedServiceId, serviceSelection.revision]);
 
   // Derived: grouped subcategories
   const subcategories = useMemo(() => {
@@ -183,9 +201,10 @@ export default function BookingPage() {
   const selectedService = services.find((s) => s.id === selectedServiceId) ?? null;
 
   // The public RPC owns service assignment and provider eligibility rules.
-  const filteredEmployees = employees;
+  const workersReady = loadedEmployeesScope?.serviceId === selectedServiceId && loadedEmployeesScope?.revision === serviceSelection.revision;
+  const filteredEmployees = workersReady ? employees : [];
 
-  const selectedEmployee = employees.find((e) => e.id === selectedWorkerId) ?? null;
+  const selectedEmployee = filteredEmployees.find((e) => e.id === selectedWorkerId) ?? null;
 
   // Calendar helpers
   const today = startOfDay(new Date());
@@ -506,7 +525,8 @@ export default function BookingPage() {
         {selectedServiceId && (
           <div key={selectedServiceId} ref={workersOffer} className="booking-offer" aria-label="Ponuka pracovníkov">
             <StepHeader num="3" title={t("Vyberte pracovníka")} onReveal={() => revealOffer(workersOffer.current)} />
-            <div className="flex flex-col gap-4">
+            {!workersReady && <p role="status" className="text-center text-muted-foreground py-4">{t("Načítavam...")}</p>}
+            <div className="flex flex-col gap-4" aria-busy={!workersReady}>
               {filteredEmployees.map((w) => (
                 <label
                   key={w.id}

@@ -275,8 +275,12 @@ test('public booking validates contact data and consent without creating a reser
   const fixture = await installPublicBookingFixture(context);
   await page.goto('/booking');
   await page.getByRole('button', { name: 'STRIH', exact: true }).click();
-  await page.getByRole('radio', { name: 'Dámske strihy', exact: true }).focus(); await page.keyboard.press('Space');
-  await page.getByRole('radio', { name: 'Test Stylist', exact: true }).focus(); await page.keyboard.press('Space');
+  const serviceChoice = page.getByRole('radio', { name: 'Dámske strihy', exact: true });
+  await serviceChoice.focus(); await page.keyboard.press('Space');
+  await expect(serviceChoice).toBeChecked();
+  const workerChoice = page.getByRole('radio', { name: 'Test Stylist', exact: true });
+  await workerChoice.focus(); await page.keyboard.press('Space');
+  await expect(workerChoice).toBeChecked();
   await page.getByRole('button', { name: '7', exact: true }).click();
   await page.getByRole('button', { name: '10:00', exact: true }).click();
   const submit = page.getByRole('button', { name: 'REZERVOVAŤ ONLINE', exact: true });
@@ -331,8 +335,12 @@ test('public availability uses timestamp-only RPC and excludes the occupied time
   const fixture = await installPublicBookingFixture(context, [busy]);
   await page.goto('/booking');
   await page.getByRole('button', { name: 'STRIH', exact: true }).click();
-  await page.getByRole('radio', { name: 'Dámske strihy', exact: true }).focus(); await page.keyboard.press('Space');
-  await page.getByRole('radio', { name: 'Test Stylist', exact: true }).focus(); await page.keyboard.press('Space');
+  const serviceChoice = page.getByRole('radio', { name: 'Dámske strihy', exact: true });
+  await serviceChoice.focus(); await page.keyboard.press('Space');
+  await expect(serviceChoice).toBeChecked();
+  const workerChoice = page.getByRole('radio', { name: 'Test Stylist', exact: true });
+  await workerChoice.focus(); await page.keyboard.press('Space');
+  await expect(workerChoice).toBeChecked();
   await page.getByRole('button', { name: '7', exact: true }).click();
   await expect(page.getByRole('button', { name: '11:00', exact: true })).toBeVisible();
   const offeredTimes = await page.getByRole('button', { name: /^\d{2}:\d{2}$/ }).allTextContents();
@@ -354,8 +362,12 @@ test('public availability RPC failure offers no times and recovers through an ex
   fixture.busyError = true;
   await page.goto('/booking');
   await page.getByRole('button', { name: 'STRIH', exact: true }).click();
-  await page.getByRole('radio', { name: 'Dámske strihy', exact: true }).focus(); await page.keyboard.press('Space');
-  await page.getByRole('radio', { name: 'Test Stylist', exact: true }).focus(); await page.keyboard.press('Space');
+  const serviceChoice = page.getByRole('radio', { name: 'Dámske strihy', exact: true });
+  await serviceChoice.focus(); await page.keyboard.press('Space');
+  await expect(serviceChoice).toBeChecked();
+  const workerChoice = page.getByRole('radio', { name: 'Test Stylist', exact: true });
+  await workerChoice.focus(); await page.keyboard.press('Space');
+  await expect(workerChoice).toBeChecked();
   await page.getByRole('button', { name: '7', exact: true }).click();
   const availabilityError = page.getByRole('alert').filter({ has: page.getByRole('button', { name: 'Skúsiť znova', exact: true }) });
   await expect(availabilityError).toContainText('Chyba pri komunikácii so serverom');
@@ -377,8 +389,12 @@ test('valid public submit uses one simulated booking RPC with salon UTC time and
   const fixture = await installPublicBookingFixture(context, [{ start_at: '2026-11-07T09:00:00.000Z', end_at: '2026-11-07T09:45:00.000Z' }], { simulateCreate: true });
   await page.goto('/booking');
   await page.getByRole('button', { name: 'STRIH', exact: true }).click();
-  await page.getByRole('radio', { name: 'Dámske strihy', exact: true }).focus(); await page.keyboard.press('Space');
-  await page.getByRole('radio', { name: 'Test Stylist', exact: true }).focus(); await page.keyboard.press('Space');
+  const serviceChoice = page.getByRole('radio', { name: 'Dámske strihy', exact: true });
+  await serviceChoice.focus(); await page.keyboard.press('Space');
+  await expect(serviceChoice).toBeChecked();
+  const workerChoice = page.getByRole('radio', { name: 'Test Stylist', exact: true });
+  await workerChoice.focus(); await page.keyboard.press('Space');
+  await expect(workerChoice).toBeChecked();
   await page.getByRole('button', { name: '7', exact: true }).click();
   await page.getByRole('button', { name: '11:00', exact: true }).click();
   await page.getByPlaceholder('Meno', { exact: true }).fill('Test');
@@ -393,4 +409,44 @@ test('valid public submit uses one simulated booking RPC with salon UTC time and
   expect(fixture.simulatedCreates).toEqual([{ business_id: 'a1b2c3d4-0000-0000-0000-000000000001', service_id: 'service-1', employee_id: EMPLOYEE_A, start_at: '2026-11-07T10:00:00.000Z', customer_name: 'Test Fixture', customer_email: 'fixture@example.invalid' }]);
   expect(fixture.blocked).toEqual([]); // Includes any attempted Edge fallback or unallowlisted mutation.
   expect(fixture.writes).toEqual([]);
+});
+
+
+test('service-specific provider loading never exposes unverified catalog workers', async ({ page, context }) => {
+  const fixture = await installPublicBookingFixture(context, [], { initialEmployeeName: 'Unverified stylist' });
+  let release!: () => void;
+  fixture.delayScopedEmployees = new Promise<void>(resolve => { release = resolve; });
+  await page.goto('/booking');
+  await expect.poll(() => fixture.employeeRequests.some(request => request._service_id === null)).toBe(true);
+  await page.getByRole('button', { name: 'STRIH', exact: true }).click();
+  await page.evaluate(() => {
+    const probe = { observedUnverifiedInteractiveRadio: false };
+    Object.assign(window, { __papiProviderProbe: probe });
+    const inspect = (node: Node) => {
+      if (!(node instanceof Element)) return;
+      const radios = node.matches('input[name="booking-worker"]') ? [node] : [...node.querySelectorAll('input[name="booking-worker"]')];
+      if (radios.some(radio => !radio.hasAttribute('disabled') && radio.getAttribute('aria-label') === 'Unverified stylist')) probe.observedUnverifiedInteractiveRadio = true;
+    };
+    new MutationObserver(records => {
+      for (const record of records) {
+        inspect(record.target);
+        for (const node of record.addedNodes) inspect(node);
+      }
+    }).observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ['aria-label', 'disabled'] });
+  });
+  const serviceChoice = page.getByRole('radio', { name: 'Dámske strihy', exact: true });
+  await serviceChoice.focus(); await page.keyboard.press('Space');
+  await expect(serviceChoice).toBeChecked();
+  await expect.poll(() => fixture.employeeRequests.some(request => request._service_id === 'service-1')).toBe(true);
+  await expect(page.getByRole('radio', { name: 'Unverified stylist', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('radio', { name: 'Test Stylist', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Vyberte dátum', exact: true })).toHaveCount(0);
+  expect(await page.evaluate(() => (window as typeof window & { __papiProviderProbe: { observedUnverifiedInteractiveRadio: boolean } }).__papiProviderProbe.observedUnverifiedInteractiveRadio)).toBe(false);
+  release();
+  const workerChoice = page.getByRole('radio', { name: 'Test Stylist', exact: true });
+  await workerChoice.focus(); await page.keyboard.press('Space');
+  await expect(workerChoice).toBeChecked();
+  await expect(page.getByRole('heading', { name: 'Vyberte dátum', exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Kalendár termínov', exact: true })).toBeVisible();
+  expect(fixture.blocked).toEqual([]); expect(fixture.writes).toEqual([]);
 });

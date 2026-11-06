@@ -2,12 +2,12 @@ import type { BrowserContext } from '@playwright/test';
 import { EMPLOYEE_A, installEmployeeFixture } from './employee-fixture';
 export const PUBLIC_BUSINESS = 'a1b2c3d4-0000-0000-0000-000000000001';
 export interface BusyInterval { start_at: string; end_at: string }
-export async function installPublicBookingFixture(context: BrowserContext, busyIntervals: BusyInterval[] = [], options: { simulateCreate?: boolean } = {}) {
+export async function installPublicBookingFixture(context: BrowserContext, busyIntervals: BusyInterval[] = [], options: { simulateCreate?: boolean; initialEmployeeName?: string } = {}) {
   const state = await installEmployeeFixture(context, { signedIn: false });
   const busyRequests: Record<string, unknown>[] = [];
   const simulatedCreates: Record<string, unknown>[] = [];
   const employeeRequests: Record<string, unknown>[] = [];
-  const fixture = Object.assign(state, { busyRequests, busyError: false, simulatedCreates, employeeRequests });
+  const fixture = Object.assign(state, { busyRequests, busyError: false, simulatedCreates, employeeRequests, delayScopedEmployees: undefined as Promise<void> | undefined });
   const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
   await context.route('**/rest/v1/**', async route => {
     const request = route.request();
@@ -21,7 +21,8 @@ export async function installPublicBookingFixture(context: BrowserContext, busyI
         state.blocked.push('INVALID public employees read'); return route.fulfill({ status: 400, body: '{}' });
       }
       employeeRequests.push(body);
-      return route.fulfill({ contentType: 'application/json', body: JSON.stringify([{ id: EMPLOYEE_A, display_name: 'Test Stylist', photo_url: null }]) });
+      if (body._service_id !== null && fixture.delayScopedEmployees) await fixture.delayScopedEmployees;
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify([{ id: EMPLOYEE_A, display_name: body._service_id === null ? options.initialEmployeeName ?? 'Test Stylist' : 'Test Stylist', photo_url: null }]) });
     }
     if (request.method() === 'POST' && url.pathname === '/rest/v1/rpc/get_public_busy_intervals') {
       const body = request.postDataJSON() as Record<string, unknown>;
