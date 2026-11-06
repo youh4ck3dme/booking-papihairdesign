@@ -14,7 +14,7 @@
     --popover-foreground: 20 15% 10%;
 
     --primary: 43 74% 49%;
-    --primary-foreground: 0 0% 100%;
+    --primary-foreground: 20 15% 10%;
 
     --secondary: 38 18% 92%;
     --secondary-foreground: 20 25% 18%;
@@ -30,20 +30,20 @@
 
     --border: 35 14% 86%;
     --input: 35 14% 86%;
-    --ring: 43 74% 49%;
+    --ring: 43 83% 28%;
 
     --radius: 0.625rem;
 
     --gold: 43 74% 49%;
     --gold-foreground: 20 15% 10%;
 
-    --sidebar-background: 20 15% 10%;
-    --sidebar-foreground: 35 10% 88%;
+    --sidebar-background: 40 20% 97%;
+    --sidebar-foreground: 20 15% 10%;
     --sidebar-primary: 43 74% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 25 18% 16%;
-    --sidebar-accent-foreground: 35 10% 88%;
-    --sidebar-border: 25 15% 18%;
+    --sidebar-accent: 38 18% 92%;
+    --sidebar-accent-foreground: 20 15% 10%;
+    --sidebar-border: 35 14% 86%;
     --sidebar-ring: 43 74% 55%;
   }
 
@@ -55,7 +55,7 @@
     --popover: 0 0% 4%;
     --popover-foreground: 0 0% 90%;
     --primary: 43 74% 52%;
-    --primary-foreground: 0 0% 100%;
+    --primary-foreground: 20 15% 10%;
     --secondary: 0 0% 8%;
     --secondary-foreground: 0 0% 75%;
     --muted: 0 0% 6%;
@@ -123,3 +123,20 @@
   .min-touch { min-height: 44px; min-width: 44px; }
 }
 
+
+/* Reveal only the newly available offer, never scale the application viewport. */
+.booking-offer { scroll-margin-top: 5rem; animation: booking-offer-reveal 280ms ease-out both; }
+@keyframes booking-offer-reveal { from { opacity: 0; transform: translateY(14px) scale(0.985); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .booking-offer { animation: none; } }
+.text-primary { color: #82600c; }
+
+.language-control { display:inline-flex; gap:4px; padding:4px; border:1px solid #e0dcd6; border-radius:8px; background:#fcfcfb; flex-shrink:0; }
+.language-control button { min-width:44px; min-height:44px; padding:8px 10px; border:0; border-radius:6px; background:transparent; color:#70685f; font:600 12px/1.2 Arial,sans-serif; cursor:pointer; }
+.language-control button[aria-pressed="true"] { background:#d9a521; color:#24201d; }
+.language-control button:hover { color:#24201d; }
+.language-control button:focus-visible { outline:2px solid #82600c; outline-offset:2px; }
+
+/* Body owns safe-area padding once; the booking shell fills the remaining area. */
+.booking-shell { min-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
+@supports (height: 100dvh) { .booking-shell { min-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); } }
+.booking-shell > header { top: env(safe-area-inset-top, 0px); }

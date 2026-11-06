@@ -122,9 +122,6 @@ importers:
       embla-carousel-react:
         specifier: ^8.6.0
         version: 8.6.0(react@18.3.1)
-      firebase:
-        specifier: ^11.6.0
-        version: 11.10.0
       framer-motion:
         specifier: ^12.34.3
         version: 12.34.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -134,9 +131,6 @@ importers:
       input-otp:
         specifier: ^1.4.2
         version: 1.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      jimp:
-        specifier: ^0.16.1
-        version: 0.16.13
       lucide-react:
         specifier: ^0.462.0
         version: 0.462.0(react@18.3.1)

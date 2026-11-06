@@ -20,6 +20,6 @@ export default defineConfig({
   },
   timeout: 30_000,
   expect: { timeout: 10_000 },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"], launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROME_BIN } } }],
   outputDir: "e2e-results/test-results",
 });
