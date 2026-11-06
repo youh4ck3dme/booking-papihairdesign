@@ -64,7 +64,7 @@ for (const [width, height] of [[240,640],[320,568],[390,844],[844,390],[768,1024
     const dashboard = page.getByRole('link', { name: 'Dashboard', exact: true });
     const website = page.getByRole('link', { name: 'Späť na web', exact: true });
     await expect(dashboard).toHaveAttribute('href', '/admin');
-    await expect(website).toHaveAttribute('href', 'https://papihairdesign-preview-7bp1zc0jb-somnajviac.vercel.app/');
+    await expect(website).toHaveAttribute('href', 'https://papihairdesign.sk/');
     expect(await website.getAttribute('target')).toBeNull();
     for (const link of [dashboard, website]) {
       const box = (await link.boundingBox())!;

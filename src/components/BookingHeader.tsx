@@ -4,6 +4,8 @@ import { ArrowUpRight, LayoutDashboard } from "lucide-react";
 import { LogoIcon } from "@/components/LogoIcon";
 import { translateBooking, type BookingLanguage } from "@/lib/booking-language";
 import { PAPI_WEBSITE_URL } from "@/lib/papi-links";
+import { notifyPapiParent } from "@/lib/papi-parent";
+import { usePapiHost } from "@/lib/use-papi-host";
 import "./booking-header.css";
 
 interface BookingHeaderProps {
@@ -12,6 +14,9 @@ interface BookingHeaderProps {
 }
 
 export default function BookingHeader({ language, onLanguageChange }: BookingHeaderProps) {
+  const embedded = window.parent !== window;
+  const hostReady = usePapiHost();
+  const externalFallback = embedded && !hostReady;
   const header = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
     const element = header.current;
@@ -36,7 +41,13 @@ export default function BookingHeader({ language, onLanguageChange }: BookingHea
             <LayoutDashboard aria-hidden="true" size={18} />
             <span>Dashboard</span>
           </Link>
-          <a className="booking-header__link booking-header__link--website" href={PAPI_WEBSITE_URL}>
+          <a className="booking-header__link booking-header__link--website" href={PAPI_WEBSITE_URL}
+            target={externalFallback ? "_blank" : undefined} rel={externalFallback ? "noopener noreferrer" : undefined}
+            title={externalFallback ? (language === "en" ? "Open website in a new tab" : "Otvoriť web v novej karte") : undefined}
+            onClick={event => {
+              if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+              if (hostReady && notifyPapiParent({ type: 'papi:navigate-home' })) event.preventDefault();
+            }}>
             <ArrowUpRight aria-hidden="true" size={18} />
             <span>{translateBooking("Späť na web", language)}</span>
           </a>

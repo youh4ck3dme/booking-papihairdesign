@@ -2,8 +2,8 @@ import type { BrowserContext } from '@playwright/test';
 import { EMPLOYEE_A, installEmployeeFixture } from './employee-fixture';
 export const PUBLIC_BUSINESS = 'a1b2c3d4-0000-0000-0000-000000000001';
 export interface BusyInterval { start_at: string; end_at: string }
-export async function installPublicBookingFixture(context: BrowserContext, busyIntervals: BusyInterval[] = [], options: { simulateCreate?: boolean; initialEmployeeName?: string } = {}) {
-  const state = await installEmployeeFixture(context, { signedIn: false });
+export async function installPublicBookingFixture(context: BrowserContext, busyIntervals: BusyInterval[] = [], options: { simulateCreate?: boolean; initialEmployeeName?: string; auth?: Parameters<typeof installEmployeeFixture>[1] } = {}) {
+  const state = await installEmployeeFixture(context, { signedIn: false, ...options.auth });
   const busyRequests: Record<string, unknown>[] = [];
   const simulatedCreates: Record<string, unknown>[] = [];
   const employeeRequests: Record<string, unknown>[] = [];
