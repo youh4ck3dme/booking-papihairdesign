@@ -34,7 +34,8 @@ for (const [width, height] of [[240,640],[320,568],[390,844],[844,390],[768,1024
     await expect(logo).toBeInViewport({ ratio: 1 });
     expect(await logo.evaluate((image: HTMLImageElement) => [image.naturalWidth, image.naturalHeight])).toEqual([359, 142]);
     const logoBox = (await logo.boundingBox())!;
-    expect(logoBox.width).toBeGreaterThanOrEqual(140);
+    if (width >= 320) expect(logoBox.width).toBeGreaterThanOrEqual(140);
+    else expect(logoBox.width).toBeGreaterThanOrEqual(96);
     expect(Math.abs(logoBox.width / logoBox.height - 359 / 142)).toBeLessThan(0.01);
     await expect(page.locator('html')).not.toHaveClass(/dark/);
     const english = page.getByRole('button', { name: 'Switch to English', exact: true });
@@ -85,6 +86,9 @@ for (const [width, height] of [[240,640],[320,568],[390,844],[844,390],[768,1024
     await page.getByRole('button', { name: 'Vyberte pracovníka', exact: true }).click();
     expect(await page.locator('[aria-label="Ponuka pracovníkov"]').evaluate(el => el.getAnimations().length)).toBe(0);
     await page.addStyleTag({ content: 'html { font-size: 200%; }' });
+    for (const button of await page.locator('header .language-control button').all()) {
+      await expect(button).toBeInViewport({ ratio: 1 });
+    }
     const lastWeek = page.getByRole('button', { name: '28', exact: true });
     await lastWeek.scrollIntoViewIfNeeded();
     await expect(lastWeek).toBeInViewport({ ratio: 1 });

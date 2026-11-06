@@ -145,3 +145,5 @@
 .booking-calendar-scroll { overflow-x: auto; overscroll-behavior-x: contain; }
 .booking-calendar-grid { min-width: 308px; }
 body .booking-day:focus-visible { outline-offset: -3px; }
+.booking-shell > header > div:first-child { min-width: 0; }
+.booking-shell > header > div:first-child > span { overflow-wrap: anywhere; }
