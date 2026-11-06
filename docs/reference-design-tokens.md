@@ -38,3 +38,5 @@ Zachováva sa existujúci svetlý režim. Tmavá polovica fotografie sa využív
 ## Hranica nasadenia
 
 Angular a cross-origin rezervačná aplikácia majú samostatné zdroje a nasadenia. Rovnaké brand-fonts.css a reference-brand.css sa udržiavajú v oboch projektoch. Angular CSS neupravuje obsah živého iframe. Zmena živého iframe vyžaduje osobitné nasadenie; toto zadanie nemení produkciu, tajomstvá, DNS ani billing.
+
+Kompaktné jazykové ovládanie: viditeľná výška skupiny je 36 px namiesto 54 px (o tretinu menej), vnútorné tlačidlo 28 px. Rozšírená neviditeľná plocha tlačidla zachováva 44 px výšku dotyku. Angular menu vrátane Objavte a jeho odkazov sa radí podľa dĺžky aktuálne zobrazeného prekladu zostupne; zhodné dĺžky majú stabilné poradie. Zoradenie podľa prekladu sa zapne až po hydratácii.

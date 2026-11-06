@@ -31,6 +31,9 @@ for (const [width, height] of [[320,568],[390,844],[844,390],[768,1024],[1440,90
     expect(headingFonts.every(status => status === 'loaded')).toBe(true);
     await expect(page.locator('html')).not.toHaveClass(/dark/);
     const english = page.getByRole('button', { name: 'Switch to English', exact: true });
+    expect(Math.round((await page.locator('.language-control').boundingBox())!.height)).toBe(36);
+    expect(Math.round((await english.boundingBox())!.height)).toBe(28);
+    expect(await english.evaluate(el => getComputedStyle(el, '::before').height)).toBe('44px');
     await english.focus();
     await page.keyboard.press('Enter');
     await expect(english).toHaveAttribute('aria-pressed', 'true');

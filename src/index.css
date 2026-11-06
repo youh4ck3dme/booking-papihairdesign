@@ -133,8 +133,9 @@
 @media (prefers-reduced-motion: reduce) { .booking-offer { animation: none; } }
 .text-primary { color: var(--papi-gold-ink); }
 
-.language-control { display:inline-flex; gap:4px; padding:4px; border:1px solid var(--papi-gold-edge); border-radius:999px; background:var(--papi-paper); flex-shrink:0; box-shadow:0 2px 6px rgb(82 61 22 / 8%); }
-.language-control button { min-width:44px; min-height:44px; padding:8px 10px; border:0; border-radius:999px; background:transparent; color:var(--papi-muted); font:600 12px/1.2 var(--font-ui); cursor:pointer; }
+.language-control { display:inline-flex; gap:4px; padding:3px; margin-block:5px; border:1px solid var(--papi-gold-edge); border-radius:999px; background:var(--papi-paper); flex-shrink:0; box-shadow:0 2px 6px rgb(82 61 22 / 8%); }
+.language-control button { position:relative; min-width:44px; min-height:28px; padding:4px 10px; border:0; border-radius:999px; background:transparent; color:var(--papi-muted); font:600 12px/1.2 var(--font-ui); cursor:pointer; }
+.language-control button::before { content:''; position:absolute; inset:-8px 0; }
 .language-control button[aria-pressed="true"] { background:var(--papi-metal); color:var(--papi-ink); box-shadow:var(--papi-control-shadow); }
 .language-control button:hover { color:var(--papi-ink); }
 .language-control button:focus-visible { outline:2px solid var(--papi-gold-ink); outline-offset:2px; }
