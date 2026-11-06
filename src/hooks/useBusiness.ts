@@ -10,7 +10,7 @@ export function useBusiness() {
     if (!memberships.length) return null;
     // prefer owner > admin > employee > customer
     const order = ["owner", "admin", "employee", "customer"];
-    return memberships.sort((a, b) => order.indexOf(a.role) - order.indexOf(b.role))[0];
+    return [...memberships].sort((a, b) => order.indexOf(a.role) - order.indexOf(b.role) || a.business_id.localeCompare(b.business_id))[0];
   }, [memberships]);
 
   const businessId = activeMembership?.business_id ?? DEMO_BUSINESS_ID;

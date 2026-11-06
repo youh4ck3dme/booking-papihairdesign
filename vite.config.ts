@@ -1,3 +1,5 @@
+/// <reference lib="webworker" />
+// Workbox route callbacks below are serialized and executed in the worker.
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -51,17 +53,15 @@ export default defineConfig(({ mode }) => {
         includeAssets: ["favicon.ico", "placeholder.svg", "pwa-icon-192.png", "pwa-icon-512.png"],
         workbox: {
           navigateFallbackDenylist: [/^\/~oauth/],
+          importScripts: ["/sw-private-cache.js"],
           runtimeCaching: [
             {
-              urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/rest\/v1\/.*/i,
-              handler: "NetworkFirst",
-              options: {
-                cacheName: "supabase-api-cache",
-                expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 },
-              },
+              urlPattern: ({ url }) => /^\/(rest|auth)\/v1\//.test(url.pathname),
+              handler: "NetworkOnly",
+              options: { fetchOptions: { cache: "no-store" } },
             },
             {
-              urlPattern: /\.(js|css|png|jpg|jpeg|svg|gif|woff2?)$/i,
+              urlPattern: ({ url }) => url.origin === self.location.origin && /\.(js|css|png|jpg|jpeg|svg|gif|woff2?)$/i.test(url.pathname),
               handler: "CacheFirst",
               options: {
                 cacheName: "static-assets",

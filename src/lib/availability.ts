@@ -52,6 +52,8 @@ export interface SlotGeneratorInput {
   existingAppointments: ExistingAppointment[];
   leadTimeMinutes?: number;
   slotInterval?: number;
+  /** Interpret the selected calendar date and schedule in this zone; omitted keeps legacy local callers. */
+  timeZone?: string;
 }
 
 const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
@@ -61,11 +63,30 @@ function timeToMinutes(time: string): number {
   return h * 60 + (m || 0);
 }
 
-function setTimeOnDate(date: Date, timeStr: string): Date {
-  const d = new Date(date);
+function setTimeOnDate(date: Date, timeStr: string, timeZone?: string): Date {
   const [h, m] = timeStr.split(":").map(Number);
-  d.setHours(h, m || 0, 0, 0);
-  return d;
+  if (!timeZone) {
+    const local = new Date(date);
+    local.setHours(h, m || 0, 0, 0);
+    return local;
+  }
+  // `date` represents the selected logical calendar day in the caller's UI.
+  // Convert that day + salon wall clock to a real UTC instant, independent of
+  // the visitor's timezone. Recompute the offset at this date (including DST).
+  const wall = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), h, m || 0);
+  let instant = wall;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone, year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+    }).formatToParts(new Date(instant));
+    const value = (type: string) => Number(parts.find(part => part.type === type)?.value);
+    const actual = Date.UTC(value('year'), value('month') - 1, value('day'), value('hour'), value('minute'), value('second'));
+    if (actual === wall) return new Date(instant);
+    instant += wall - actual;
+  }
+  // Nonexistent wall times in a spring DST gap must not invent a bookable slot.
+  return new Date(Number.NaN);
 }
 
 /**
@@ -130,6 +151,7 @@ export function generateSlots(input: SlotGeneratorInput): Date[] {
     existingAppointments,
     leadTimeMinutes = 0,
     slotInterval = 30,
+    timeZone,
   } = input;
 
   const totalDuration = serviceDuration + serviceBuffer;
@@ -144,8 +166,10 @@ export function generateSlots(input: SlotGeneratorInput): Date[] {
   const empDay = employeeSchedules.find((s) => s.day_of_week === dayName);
   if (!empDay) return slots;
 
-  const empStart = setTimeOnDate(date, empDay.start_time);
-  const empEnd = setTimeOnDate(date, empDay.end_time);
+  const empStart = setTimeOnDate(date, empDay.start_time, timeZone);
+  const empEnd = setTimeOnDate(date, empDay.end_time, timeZone);
+
+  if (!Number.isFinite(empStart.getTime()) || !Number.isFinite(empEnd.getTime())) return [];
 
   const now = new Date();
   const earliestAllowed = addMinutes(now, leadTimeMinutes);
@@ -157,8 +181,10 @@ export function generateSlots(input: SlotGeneratorInput): Date[] {
 
   // Generate slots for each business interval
   for (const interval of intervals) {
-    const businessStart = setTimeOnDate(date, interval.start);
-    const businessEnd = setTimeOnDate(date, interval.end);
+    const businessStart = setTimeOnDate(date, interval.start, timeZone);
+    const businessEnd = setTimeOnDate(date, interval.end, timeZone);
+
+    if (!Number.isFinite(businessStart.getTime()) || !Number.isFinite(businessEnd.getTime())) continue;
 
     // Effective window = intersection of business interval and employee schedule
     const windowStart = isAfter(empStart, businessStart) ? empStart : businessStart;

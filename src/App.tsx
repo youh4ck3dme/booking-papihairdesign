@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useBusiness } from "@/hooks/useBusiness";
 import { ThemeProvider } from "next-themes";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 
@@ -30,7 +31,9 @@ const EmployeesPage = lazy(() => import("./pages/admin/EmployeesPage"));
 const ServicesPage = lazy(() => import("./pages/admin/ServicesPage"));
 const CustomersPage = lazy(() => import("./pages/admin/CustomersPage"));
 const SettingsPage = lazy(() => import("./pages/admin/SettingsPage"));
-const MySchedulePage = lazy(() => import("./pages/admin/MySchedulePage"));
+const EmployeeDashboardPage = lazy(() => import("./features/employee/EmployeePages").then(m => ({ default: m.EmployeeDashboardPage })));
+const EmployeeCalendarPage = lazy(() => import("./features/employee/EmployeePages").then(m => ({ default: m.EmployeeCalendarPage })));
+const EmployeeAppointmentsPage = lazy(() => import("./features/employee/EmployeePages").then(m => ({ default: m.EmployeeAppointmentsPage })));
 const ReceptionPage = lazy(() => import("./pages/ReceptionPage"));
 const DiagnosticsPage = lazy(() => import("./pages/DiagnosticsPage"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
@@ -44,6 +47,11 @@ const LazyFallback = () => (
 );
 
 const queryClient = new QueryClient();
+
+function RolePage({ employee, admin }: { employee: React.ReactNode; admin: React.ReactNode }) {
+  const { isEmployee } = useBusiness();
+  return <>{isEmployee ? employee : admin}</>;
+}
 
 const App = () => (
   <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" enableSystem={false}>
@@ -71,7 +79,7 @@ const App = () => (
               <Route
                 path="/reception"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requireAdmin>
                     <ReceptionPage />
                   </ProtectedRoute>
                 }
@@ -81,7 +89,7 @@ const App = () => (
                 path="/admin"
                 element={
                   <ProtectedRoute>
-                    <AdminLayout><DashboardPage /></AdminLayout>
+                    <AdminLayout><RolePage employee={<EmployeeDashboardPage />} admin={<DashboardPage />} /></AdminLayout>
                   </ProtectedRoute>
                 }
               />
@@ -89,7 +97,7 @@ const App = () => (
                 path="/admin/calendar"
                 element={
                   <ProtectedRoute>
-                    <AdminLayout><CalendarPage /></AdminLayout>
+                    <AdminLayout><RolePage employee={<Navigate to="/admin/my" replace />} admin={<CalendarPage />} /></AdminLayout>
                   </ProtectedRoute>
                 }
               />
@@ -97,14 +105,14 @@ const App = () => (
                 path="/admin/appointments"
                 element={
                   <ProtectedRoute>
-                    <AdminLayout><AppointmentsPage /></AdminLayout>
+                    <AdminLayout><RolePage employee={<EmployeeAppointmentsPage />} admin={<AppointmentsPage />} /></AdminLayout>
                   </ProtectedRoute>
                 }
               />
               <Route
                 path="/admin/employees"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requireAdmin>
                     <AdminLayout><EmployeesPage /></AdminLayout>
                   </ProtectedRoute>
                 }
@@ -112,7 +120,7 @@ const App = () => (
               <Route
                 path="/admin/services"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requireAdmin>
                     <AdminLayout><ServicesPage /></AdminLayout>
                   </ProtectedRoute>
                 }
@@ -120,7 +128,7 @@ const App = () => (
               <Route
                 path="/admin/customers"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requireAdmin>
                     <AdminLayout><CustomersPage /></AdminLayout>
                   </ProtectedRoute>
                 }
@@ -128,7 +136,7 @@ const App = () => (
               <Route
                 path="/admin/settings"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requireAdmin>
                     <AdminLayout><SettingsPage /></AdminLayout>
                   </ProtectedRoute>
                 }
@@ -137,7 +145,7 @@ const App = () => (
                 path="/admin/my"
                 element={
                   <ProtectedRoute>
-                    <AdminLayout><MySchedulePage /></AdminLayout>
+                    <AdminLayout><RolePage employee={<EmployeeCalendarPage />} admin={<Navigate to="/admin/calendar" replace />} /></AdminLayout>
                   </ProtectedRoute>
                 }
               />
