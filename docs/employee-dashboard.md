@@ -24,16 +24,26 @@ pnpm run test:sandbox <presný-commit-SHA>
 
 Runner vytvorí nový archive export commitu, bez pôvodných `.env` alebo `node_modules`, nastaví výhradne testovacie API a spustí frozen inštaláciu, oba TypeScript projekty, celý ESLint, Vitest, produkčný build, produkčný aj plný dependency audit, lokálny SQL/RLS test a verejné aj prihlásené E2E. GitHub Actions nespúšťa. Browser retries sú explicitne 0. Výstup `result.json` obsahuje SHA, exit kódy a cesty k logom; pôvodné zlyhania sa zachovávajú. Voliteľné `PAPI_PNPM_CLI` určuje cestu k pnpm.cjs a `PAPI_SANDBOX_ROOT` koreň dôkazov, `PLAYWRIGHT_CHROME_BIN` podporovaný lokálny Chrome.
 
-RLS runner používa vlastný dočasný PostgreSQL 18 kontajner bez siete, bez vystavených portov, s dátami v tmpfs. Auth claim primitíva sú simulované, tabuľky a relevantné auth/RLS migrácie sú skutočné SQL z repozitára. Toto je overenie DB pravidiel; nejde o úplný reset všetkých historických migrácií ani dôkaz nasadenia na živom Supabase. E2E naproti tomu používa kontrolované auth/API fixtures a povoľuje zápisy len do ich pamäťového stavu.
+RLS runner používa vlastný dočasný PostgreSQL 18 kontajner bez siete, bez vystavených portov, s dátami v tmpfs. Auth claim primitíva sú simulované, tabuľky a relevantné auth/RLS migrácie sú skutočné SQL z repozitára. Harness pred novou migráciou úmyselne obnoví známu starú verejnú SELECT politiku, aby preukázal jej odstránenie samotnou novou migráciou. Toto je overenie DB pravidiel; nejde o úplný reset všetkých historických migrácií ani dôkaz nasadenia na živom Supabase. E2E naproti tomu používa kontrolované auth/API fixtures a povoľuje zápisy len do ich pamäťového stavu.
 
 ## Produkčný release
 
 Používateľ dodatočne autorizoval po zelených kontrolách a merge aj produkčný Vercel release. Overený cieľ: projekt `nimble-agenda` (`prj_RzEAla7pjIJ4x46eCvKMIxEhyLVT`), tím `team_ABU61vBGuToYfLqgvPbt1zlk`, alias `nimble-agenda-swart.vercel.app`. Samostatný Angular web sa týmto releasom nenasadzuje.
 
 1. Presný finálny commit musí prejsť sandboxom; PR smeruje do `loveable`, nikdy priamy push do cieľovej vetvy.
-2. Databázová migrácia `employee_dashboard_status_guard` musí byť overená a samostatne autorizovaná pre skutočný Supabase projekt `eudwjgdijylsgcnncxeg`. Obmedzuje pracovníka na povolené stavové zmeny a zachováva owner/admin a trusted maintenance. Frontend build migrácie nespúšťa.
+2. Databázová migrácia `employee_dashboard_status_guard` musí byť overená a samostatne autorizovaná pre skutočný produkčný Supabase projekt `jxxzszwsxazcisgidziy` (overený z verejného produkčného JS; `eudwjgdijylsgcnncxeg` je iba fallback v repozitári). Obmedzuje pracovníka na povolené stavové zmeny, odstráni známu historickú verejnú SELECT politiku a pridá anonymné časové API obsadenosti; zachováva owner/admin a trusted maintenance. Frontend build migrácie nespúšťa.
 3. Vytvoriť staged produkčný Vercel deployment presného zlúčeného zdroja bez pridelenia produkčných aliasov, skontrolovať build, autentifikačné presmerovanie a verejný booking bez skutočných rezervácií; potom propagovať rovnaký build.
 4. Overiť produkčný alias, source commit, dostupnosť súborov, worker a konzolu. Prihlásený živý test vyžaduje autorizovaný testovací účet; fixture PASS ho nenahrádza.
 5. Pri probléme vrátiť zaznamenaný predchádzajúci Vercel deployment. DB guard automaticky neodstraňovať: je spätne kompatibilný s povolenými zamestnaneckými stavovými zmenami; jeho rollback vyžaduje samostatnú kontrolu oprávnení.
 
 Východiskový produkčný deployment: `dpl_CzSpyHjQTAwGZh7Pdb2dXdJcZ3oP`, zdroj `3e9a5887a4becb17cf298a65b2c93a1039dbd9f3`. Pripojený Supabase konektor v čase prípravy nesprístupňoval booking projekt a CLI nebolo prihlásené. Bez overenia tejto závislosti nemožno tvrdiť, že databázová migrácia je nasadená. DNS, tajomstvá a billing sa nemenia.
+
+## Verejná dostupnosť po uzavretí priameho čítania rezervácií
+
+Verejný booking nesmie čítať `appointments` ako anonymný používateľ. Namiesto toho volá read-only `POST /rest/v1/rpc/get_public_busy_intervals` s argumentmi `_business_id`, `_employee_id`, `_start`, `_end`. Výsledok má výhradne `start_at` a `end_at`, bez identifikátorov, mien, kontaktov, poznámok alebo stavov. Zrušené rezervácie sa nezapočítavajú, prekryv sa počíta v polootvorenom rozsahu `[start,end)` a intervaly sa orežú na vyžiadané okno.
+
+Toto je zámerne verejná informácia potrebná na výber voľného času, preto RPC nevyžaduje prihlásenie. Public SECURITY INVOKER obal volá úzky SECURITY DEFINER helper v neexponovanej `private` schéme. Oba majú explicitný `pg_catalog` search_path a EXECUTE iba pre `anon`, `authenticated`, `service_role`; používatelia dostávajú USAGE na schému, nie právo tvoriť objekty. Helper povoľuje iba aktívneho pracovníka patriaceho do zadanej prevádzky, konečný kladný rozsah najviac 48 hodín, začiatok nie starší než 36 hodín a koniec v horizonte `max_days_ahead+1` dní. Pri chybe RPC frontend neponúkne časy ako keby bol deň prázdny.
+
+Samostatný lokálny SQL test `tests/public-availability.sql` preveruje tento verejný kontrakt aj zákaz priameho anon čítania. Pred frontend releasom musí byť autorizovane nasadená príslušná migrácia s RPC; samotný merge ani fixture test túto závislosť nepotvrdzujú.
+
+Verejný generátor dostáva explicitné časové pásmo salónu a vytvára skutočné UTC okamihy; menovky aj odoslanie používajú salónový čas. Starší administrátorskí volajúci bez parametra `timeZone` zachovávajú pôvodné správanie. Migrácia je atómová a pred DDL overuje základné tabuľky a autorizačné pomocné funkcie; neznámy produkčný projekt sa nesmie opravovať naslepo.

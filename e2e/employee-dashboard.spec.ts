@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
-import { installEmployeeFixture, defaultAppointments, appointment, switchFixtureAccount, BUSINESS_A, EMPLOYEE_A, STAFF_B, FIXED_NOW } from './helpers/employee-fixture';
+import { installPublicBookingFixture } from './helpers/public-booking-fixture';
+import { installEmployeeFixture, defaultAppointments, appointment, switchFixtureAccount, BUSINESS_A, EMPLOYEE_A, STAFF_A, STAFF_B, FIXED_NOW } from './helpers/employee-fixture';
 
 test.use({ locale: 'sk-SK', timezoneId: 'America/New_York', serviceWorkers: 'block' });
 test.beforeEach(async ({ page }) => { await page.clock.install({ time: new Date(FIXED_NOW) }); });
@@ -64,6 +65,11 @@ for (const [width, height] of [[240, 640], [320, 568], [390, 844], [844, 390], [
     const finalCard = page.locator('[data-testid^="appointment-"]').last();
     await finalCard.scrollIntoViewIfNeeded();
     await expect(finalCard).toBeInViewport();
+    // A fixed bottom navigation is not accounted for by CDP's centered
+    // scrollIntoViewIfNeeded. Exercise the user's actual end-of-page scroll.
+    await finalCard.focus();
+    await page.keyboard.press('End');
+    await expect.poll(() => page.evaluate(() => { const root = document.scrollingElement!; return Math.ceil(root.scrollTop + root.clientHeight) >= root.scrollHeight; })).toBe(true);
     const lastBox = (await finalCard.boundingBox())!;
     if (width < 768) {
       const bottomNav = page.getByRole('navigation', { name: 'Zamestnanecká navigácia' }).filter({ visible: true });
@@ -98,6 +104,7 @@ test('employee confirms, completes and cancels only own current-status reservati
   await expect.poll(() => fixture.rows[1].status).toBe('cancelled');
   expect(fixture.writes.map(write => write.body)).toEqual([{ status: 'confirmed' }, { status: 'completed' }, { status: 'cancelled' }]);
   for (const write of fixture.writes) {
+    expect(write.principal).toBe(STAFF_A);
     expect(write.url.searchParams.get('business_id')).toBe(`eq.${BUSINESS_A}`);
     expect(write.url.searchParams.get('employee_id')).toBe(`eq.${EMPLOYEE_A}`);
     expect(write.url.searchParams.get('status')).toMatch(/^eq\.(pending|confirmed)$/);
@@ -232,7 +239,7 @@ test('history and state filter exclude other periods and states', async ({ page,
   await expect(page.getByText('Mária Completed', { exact: true })).toBeVisible();
   await expect(page.getByText('Zora Cancelled', { exact: true })).toBeVisible();
   await expect(page.getByText('Anna Pending', { exact: true })).toHaveCount(0);
-  await page.getByLabel('Stav rezervácie', { exact: true }).selectOption('completed');
+  await page.getByRole('combobox', { name: 'Stav rezervácie', exact: true }).selectOption('completed');
   await expect(page.getByText('Mária Completed', { exact: true })).toBeVisible();
   await expect(page.getByText('Zora Cancelled', { exact: true })).toHaveCount(0);
   expect(fixture.queries.at(-1)?.searchParams.get('status')).toBe('eq.completed');
@@ -265,24 +272,7 @@ test('ambiguous active employee mapping is rejected instead of choosing a record
 });
 
 test('public booking validates contact data and consent without creating a reservation', async ({ page, context }) => {
-  const fixture = await installEmployeeFixture(context, { signedIn: false });
-  const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-  await context.route('**/rest/v1/**', async route => {
-    if (route.request().method() !== 'GET') {
-      fixture.blocked.push(`${route.request().method()} ${new URL(route.request().url()).pathname}`);
-      return route.fulfill({ status: 405, body: '{}' });
-    }
-    const table = new URL(route.request().url()).pathname.split('/').pop() ?? '';
-    const tables: Record<string, unknown[]> = {
-      businesses: [{ id: 'a1b2c3d4-0000-0000-0000-000000000001', name: 'Fixture salon', max_days_ahead: 60, lead_time_minutes: 0, opening_hours: Object.fromEntries(days.map(day => [day, { open: true, start: '10:00', end: '18:00' }])) }],
-      services: [{ id: 'service-1', name_sk: 'Dámske strihy', category: 'damske', subcategory: 'STRIH', price: 30, duration_minutes: 45, buffer_minutes: 0, is_active: true }],
-      employees: [{ id: EMPLOYEE_A, display_name: 'Test Stylist', is_active: true, profile_id: null }],
-      schedules: days.map(day => ({ employee_id: EMPLOYEE_A, day_of_week: day, start_time: '10:00', end_time: '18:00' })),
-    };
-    const rows = tables[table] ?? [];
-    const single = route.request().headers()['accept']?.includes('application/vnd.pgrst.object+json');
-    return route.fulfill({ contentType: 'application/json', body: JSON.stringify(single ? rows[0] ?? null : rows) });
-  });
+  const fixture = await installPublicBookingFixture(context);
   await page.goto('/booking');
   await page.getByRole('button', { name: 'STRIH', exact: true }).click();
   await page.getByRole('radio', { name: 'Dámske strihy', exact: true }).focus(); await page.keyboard.press('Space');
@@ -320,11 +310,84 @@ test('calendar date changes use salon midnight independently of browser timezone
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/admin/my');
   await expect(page.getByText('Anna Pending', { exact: true })).toBeVisible();
+  expect(fixture.queries.at(-1)?.searchParams.get('end_at')).toBe('gt.2026-11-05T23:00:00.000Z');
+  expect(fixture.queries.at(-1)?.searchParams.get('start_at')).toBe('lt.2026-11-06T23:00:00.000Z');
   await page.getByLabel('Vybrať dátum', { exact: true }).fill('2026-11-07');
   await expect(page.getByText('Žiadne rezervácie v tomto období.', { exact: true })).toBeVisible();
   await expect(page.getByText('Anna Pending', { exact: true })).toHaveCount(0);
+  expect(fixture.queries.at(-1)?.searchParams.get('end_at')).toBe('gt.2026-11-06T23:00:00.000Z');
+  expect(fixture.queries.at(-1)?.searchParams.get('start_at')).toBe('lt.2026-11-07T23:00:00.000Z');
   await page.getByLabel('Vybrať dátum', { exact: true }).fill('2026-11-06');
+  await expect(page.getByLabel('Vybrať dátum', { exact: true })).toHaveValue('2026-11-06');
+  // Returning to a still-fresh day may use the correctly scoped query cache.
   await expect(page.getByText('Anna Pending', { exact: true })).toBeVisible();
-  expect(fixture.queries.at(-1)?.searchParams.get('end_at')).toBe('gt.2026-11-05T23:00:00.000Z');
-  expect(fixture.queries.at(-1)?.searchParams.get('start_at')).toBe('lt.2026-11-06T23:00:00.000Z');
+  await expect(page.getByText('Žiadne rezervácie v tomto období.', { exact: true })).toHaveCount(0);
+});
+
+
+test('public availability uses timestamp-only RPC and excludes the occupied time', async ({ page, context }) => {
+  expect(await page.evaluate(() => Intl.DateTimeFormat().resolvedOptions().timeZone)).toBe('America/New_York');
+  const busy = { start_at: '2026-11-07T09:00:00.000Z', end_at: '2026-11-07T09:45:00.000Z' }; // 10:00–10:45 in Bratislava, independent of the browser.
+  const fixture = await installPublicBookingFixture(context, [busy]);
+  await page.goto('/booking');
+  await page.getByRole('button', { name: 'STRIH', exact: true }).click();
+  await page.getByRole('radio', { name: 'Dámske strihy', exact: true }).focus(); await page.keyboard.press('Space');
+  await page.getByRole('radio', { name: 'Test Stylist', exact: true }).focus(); await page.keyboard.press('Space');
+  await page.getByRole('button', { name: '7', exact: true }).click();
+  await expect(page.getByRole('button', { name: '10:45', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '10:00', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '10:15', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '10:30', exact: true })).toHaveCount(0);
+  expect(fixture.busyRequests).toHaveLength(1);
+  expect(fixture.busyRequests[0]._employee_id).toBe(EMPLOYEE_A);
+  expect(fixture.busyRequests[0]._start).toBe('2026-11-06T23:00:00.000Z');
+  expect(fixture.busyRequests[0]._end).toBe('2026-11-07T23:00:00.000Z');
+  expect(fixture.blocked).toEqual([]); expect(fixture.writes).toEqual([]);
+});
+
+
+test('public availability RPC failure offers no times and recovers through an explicit retry', async ({ page, context }) => {
+  const fixture = await installPublicBookingFixture(context, [{ start_at: '2026-11-07T09:00:00.000Z', end_at: '2026-11-07T09:45:00.000Z' }]);
+  fixture.busyError = true;
+  await page.goto('/booking');
+  await page.getByRole('button', { name: 'STRIH', exact: true }).click();
+  await page.getByRole('radio', { name: 'Dámske strihy', exact: true }).focus(); await page.keyboard.press('Space');
+  await page.getByRole('radio', { name: 'Test Stylist', exact: true }).focus(); await page.keyboard.press('Space');
+  await page.getByRole('button', { name: '7', exact: true }).click();
+  const availabilityError = page.getByRole('alert').filter({ has: page.getByRole('button', { name: 'Skúsiť znova', exact: true }) });
+  await expect(availabilityError).toContainText('Chyba pri komunikácii so serverom');
+  await expect(page.getByRole('button', { name: /^\d{2}:\d{2}$/ })).toHaveCount(0);
+  await expect(page.getByText('Žiadne dostupné termíny v tento deň', { exact: true })).toHaveCount(0);
+  expect(fixture.busyRequests).toHaveLength(1);
+  fixture.busyError = false;
+  await page.getByRole('button', { name: 'Skúsiť znova', exact: true }).click();
+  await expect(page.getByRole('button', { name: '10:45', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '10:00', exact: true })).toHaveCount(0);
+  await expect(availabilityError).toHaveCount(0);
+  expect(fixture.busyRequests).toHaveLength(2);
+  expect(fixture.blocked).toEqual([]); expect(fixture.writes).toEqual([]);
+});
+
+
+test('valid public submit uses one simulated booking RPC with salon UTC time and no Edge request', async ({ page, context }) => {
+  expect(await page.evaluate(() => Intl.DateTimeFormat().resolvedOptions().timeZone)).toBe('America/New_York');
+  const fixture = await installPublicBookingFixture(context, [{ start_at: '2026-11-07T09:00:00.000Z', end_at: '2026-11-07T09:45:00.000Z' }], { simulateCreate: true });
+  await page.goto('/booking');
+  await page.getByRole('button', { name: 'STRIH', exact: true }).click();
+  await page.getByRole('radio', { name: 'Dámske strihy', exact: true }).focus(); await page.keyboard.press('Space');
+  await page.getByRole('radio', { name: 'Test Stylist', exact: true }).focus(); await page.keyboard.press('Space');
+  await page.getByRole('button', { name: '7', exact: true }).click();
+  await page.getByRole('button', { name: '10:45', exact: true }).click();
+  await page.getByPlaceholder('Meno', { exact: true }).fill('Test');
+  await page.getByPlaceholder('Priezvisko', { exact: true }).fill('Fixture');
+  await page.getByPlaceholder('Email', { exact: true }).fill('fixture@example.invalid');
+  await page.getByText('všeobecnými obchodnými podmienkami', { exact: true }).click();
+  await page.getByRole('button', { name: 'REZERVOVAŤ ONLINE', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Rezervácia potvrdená!', exact: true })).toBeVisible();
+  await expect(page.getByText('10:45', { exact: true })).toBeVisible();
+  expect(fixture.employeeRequests.some(request => request._service_id === null)).toBe(true);
+  expect(fixture.employeeRequests.some(request => request._service_id === 'service-1')).toBe(true);
+  expect(fixture.simulatedCreates).toEqual([{ business_id: 'a1b2c3d4-0000-0000-0000-000000000001', service_id: 'service-1', employee_id: EMPLOYEE_A, start_at: '2026-11-07T09:45:00.000Z', customer_name: 'Test Fixture', customer_email: 'fixture@example.invalid' }]);
+  expect(fixture.blocked).toEqual([]); // Includes any attempted Edge fallback or unallowlisted mutation.
+  expect(fixture.writes).toEqual([]);
 });

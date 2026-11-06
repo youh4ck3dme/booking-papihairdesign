@@ -703,6 +703,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_public_bookable_employees: {
+        Args: { _business_id: string; _service_id: string | null }
+        Returns: { id: string; display_name: string; photo_url: string | null }[]
+      }
+      create_public_booking: {
+        Args: { business_id: string; service_id: string; employee_id: string; start_at: string; customer_name: string; customer_email: string; customer_phone?: string }
+        Returns: Json
+      }
+      get_public_busy_intervals: {
+        Args: { _business_id: string; _employee_id: string; _start: string; _end: string }
+        Returns: { start_at: string; end_at: string }[]
+      }
       get_employee_id: {
         Args: { _business_id: string; _user_id: string }
         Returns: string

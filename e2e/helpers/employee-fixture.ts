@@ -41,7 +41,7 @@ export function fixtureSession(userId = STAFF_A, expiresAt = Math.floor(Date.now
   return { access_token: token, refresh_token: 'fixture-refresh-token', token_type: 'bearer', expires_in: 24 * 3600, expires_at: expiresAt, user: { id: userId, aud: 'authenticated', role: 'authenticated', email: 'staff@example.invalid', app_metadata: { provider: 'email', providers: ['email'] }, user_metadata: {}, identities: [], created_at: '2026-01-01T00:00:00Z' } };
 }
 function subject(request: Request): string {
-  try { return JSON.parse(Buffer.from((request.headers()['authorization'] ?? '').split('.')[1], 'base64url').toString()).sub ?? STAFF_A; } catch { return STAFF_A; }
+  try { return JSON.parse(Buffer.from((request.headers()['authorization'] ?? '').split('.')[1], 'base64url').toString()).sub ?? ''; } catch { return ''; }
 }
 function matches(row: Record<string, unknown>, key: string, expression: string): boolean {
   if (['select', 'order', 'limit', 'offset', 'or'].includes(key) || key.startsWith('csearch.') || key.startsWith('ssearch.')) return true;
@@ -62,7 +62,7 @@ export interface EmployeeFixture {
   rows: FixtureAppointment[]; role: FixtureRole; missingEmployee: boolean;
   error: boolean; offline: boolean; conflictNextWrite: boolean;
   delayNextRead: Promise<void> | null; delayNextWrite?: Promise<void>; onPrivateRequest?: () => Promise<void>;
-  queries: URL[]; writes: { url: URL; body: Record<string, unknown> }[]; blocked: string[];
+  queries: URL[]; writes: { url: URL; body: Record<string, unknown>; principal: string }[]; blocked: string[];
 }
 export async function installEmployeeFixture(context: BrowserContext, options: { role?: FixtureRole; userId?: string; missingEmployee?: boolean; ambiguousEmployee?: boolean; missingMembership?: boolean; rows?: FixtureAppointment[]; signedIn?: boolean; expired?: boolean } = {}) {
   const state: EmployeeFixture = { rows: options.rows ?? defaultAppointments(), role: options.role ?? 'employee', missingEmployee: options.missingEmployee ?? false, error: false, offline: false, conflictNextWrite: false, delayNextRead: null, queries: [], writes: [], blocked: [] };
@@ -100,7 +100,7 @@ export async function installEmployeeFixture(context: BrowserContext, options: {
     if (['profiles', 'memberships', 'employees', 'appointments'].includes(table)) await state.onPrivateRequest?.();
     if (request.method() === 'PATCH' && table === 'appointments') {
       const body = request.postDataJSON() as Record<string, unknown>;
-      state.writes.push({ url, body });
+      state.writes.push({ url, body, principal: currentUser });
       const delay = state.delayNextWrite; state.delayNextWrite = undefined; if (delay) await delay;
       if (Object.keys(body).join(',') !== 'status') return route.fulfill({ status: 403, body: '{}' });
       const row = state.rows.find(row => [...url.searchParams].every(([key, value]) => matches(row as unknown as Record<string, unknown>, key, value)));

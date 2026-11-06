@@ -4,6 +4,8 @@ import { revealBookingOffer as revealOffer } from "@/lib/reveal-booking-offer";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import { createPublicBooking } from "@/lib/create-public-booking";
+import { salonDayRange, salonTime } from "@/lib/employee-dashboard";
 import { generateSlots, getEffectiveIntervals, type BusinessHours, type EmployeeSchedule, type ExistingAppointment, type BusinessHourEntry, type DateOverrideEntry } from "@/lib/availability";
 import { toast } from "sonner";
 import { format, addDays, startOfDay, isSameDay, isAfter, isBefore, getDaysInMonth, getDay, startOfMonth } from "date-fns";
@@ -44,18 +46,10 @@ interface ServiceRow {
 interface EmployeeRow {
   id: string;
   display_name: string;
-  email: string | null;
-  phone: string | null;
-  is_active: boolean;
-  business_id: string;
   photo_url: string | null;
-  profile_id: string | null;
 }
 
-interface MembershipRow {
-  profile_id: string;
-  role: "owner" | "admin" | "employee" | "customer";
-}
+type PublicBusiness = Pick<Tables<"businesses">, "id" | "opening_hours" | "lead_time_minutes" | "max_days_ahead">;
 
 interface BookingResult {
   claim_token?: string;
@@ -73,12 +67,10 @@ export default function BookingPage() {
   // Data states
   const [services, setServices] = useState<ServiceRow[]>([]);
   const [employees, setEmployees] = useState<EmployeeRow[]>([]);
-  const [business, setBusiness] = useState<Tables<"businesses"> | null>(null);
+  const [business, setBusiness] = useState<PublicBusiness | null>(null);
   const [businessHourEntries, setBusinessHourEntries] = useState<BusinessHourEntry[]>([]);
   const [dateOverrides, setDateOverrides] = useState<DateOverrideEntry[]>([]);
   const [schedules, setSchedules] = useState<Record<string, EmployeeSchedule[]>>({});
-  const [employeeServiceMap, setEmployeeServiceMap] = useState<Record<string, string[]>>({});
-  const [memberships, setMemberships] = useState<MembershipRow[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
 
   // Booking states
@@ -107,57 +99,72 @@ export default function BookingPage() {
   // Availability
   const [availableSlots, setAvailableSlots] = useState<Date[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState(false);
+  const [slotRefresh, setSlotRefresh] = useState(0);
 
-  // Load initial data
+  // Match the deployed public catalogue contract; never fetch private employee
+  // fields, memberships, or the business SMTP/configuration columns here.
   useEffect(() => {
+    const controller = new AbortController();
     const load = async () => {
       const [bizRes, svcRes, empRes, bhRes, bdoRes] = await Promise.all([
-        supabase.from("businesses").select("*").eq("id", DEMO_BUSINESS_ID).maybeSingle(),
-        supabase.from("services").select("*").eq("business_id", DEMO_BUSINESS_ID).eq("is_active", true).order("name_sk"),
-        supabase.from("employees").select("*").eq("business_id", DEMO_BUSINESS_ID).eq("is_active", true).order("display_name"),
-        supabase.from("business_hours").select("*").eq("business_id", DEMO_BUSINESS_ID).order("sort_order"),
-        supabase.from("business_date_overrides").select("*").eq("business_id", DEMO_BUSINESS_ID).gte("override_date", new Date().toISOString().slice(0, 10)),
+        supabase.from("businesses").select("opening_hours, lead_time_minutes, max_days_ahead").eq("id", DEMO_BUSINESS_ID).abortSignal(controller.signal).maybeSingle(),
+        supabase.from("services").select("*").eq("business_id", DEMO_BUSINESS_ID).eq("is_active", true).order("name_sk").abortSignal(controller.signal),
+        supabase.rpc("get_public_bookable_employees", { _business_id: DEMO_BUSINESS_ID, _service_id: null }).abortSignal(controller.signal),
+        supabase.from("business_hours").select("*").eq("business_id", DEMO_BUSINESS_ID).order("sort_order").abortSignal(controller.signal),
+        supabase.from("business_date_overrides").select("*").eq("business_id", DEMO_BUSINESS_ID).gte("override_date", new Date().toISOString().slice(0, 10)).abortSignal(controller.signal),
       ]);
-      setBusiness(bizRes.data);
+      if (controller.signal.aborted) return;
+      // The ID is the already-known query scope, not an additional public column.
+      setBusiness(bizRes.data ? { ...bizRes.data, id: DEMO_BUSINESS_ID } : null);
       setServices((svcRes.data ?? []) as unknown as ServiceRow[]);
-      setEmployees((empRes.data ?? []) as unknown as EmployeeRow[]);
+      setEmployees(empRes.data ?? []);
+      if (bizRes.error || svcRes.error || empRes.error || bhRes.error || bdoRes.error) toast.error(t("Chyba pri komunikácii so serverom"));
       setBusinessHourEntries((bhRes.data ?? []).map((h: Tables<"business_hours">) => ({
         day_of_week: h.day_of_week, mode: h.mode, start_time: h.start_time, end_time: h.end_time,
       })));
       setDateOverrides((bdoRes.data ?? []).map((o: Tables<"business_date_overrides">) => ({
         override_date: o.override_date, mode: o.mode, start_time: o.start_time, end_time: o.end_time,
       })));
-
-      const empIds = (empRes.data ?? []).map((e: Tables<"employees">) => e.id);
-      if (empIds.length) {
-        const { data: scheds } = await supabase.from("schedules").select("*").in("employee_id", empIds);
+      const employeeIds = (empRes.data ?? []).map(employee => employee.id);
+      if (employeeIds.length) {
+        const { data, error } = await supabase.from("schedules").select("*").in("employee_id", employeeIds).abortSignal(controller.signal);
+        if (controller.signal.aborted) return;
         const map: Record<string, EmployeeSchedule[]> = {};
-        (scheds ?? []).forEach((s: Tables<"schedules">) => {
-          if (!map[s.employee_id]) map[s.employee_id] = [];
-          map[s.employee_id].push(s);
-        });
+        (data ?? []).forEach(schedule => { (map[schedule.employee_id] ??= []).push(schedule); });
         setSchedules(map);
+        if (error) toast.error(t("Chyba pri komunikácii so serverom"));
       }
-
-      const { data: esMap } = await (supabase as any).from("employee_services").select("employee_id, service_id");
-      const eMap: Record<string, string[]> = {};
-      (esMap ?? []).forEach((item: any) => {
-        if (!eMap[item.employee_id]) eMap[item.employee_id] = [];
-        eMap[item.employee_id].push(item.service_id);
-      });
-      setEmployeeServiceMap(eMap);
-
-      // Load memberships to filter admins/owners based on setting
-      const { data: memData } = await supabase
-        .from("memberships")
-        .select("profile_id, role")
-        .eq("business_id", DEMO_BUSINESS_ID);
-      setMemberships((memData ?? []) as MembershipRow[]);
-
       setInitialLoading(false);
     };
-    load();
+    void load();
+    return () => controller.abort();
   }, []);
+
+  useEffect(() => {
+    if (!selectedServiceId) return;
+    const controller = new AbortController();
+    const loadServiceEmployees = async () => {
+      setEmployees([]); setSchedules({});
+      setSelectedWorkerId(null); setSelectedDate(null); setSelectedTime(null);
+      const { data, error } = await supabase.rpc("get_public_bookable_employees", {
+        _business_id: DEMO_BUSINESS_ID, _service_id: selectedServiceId,
+      }).abortSignal(controller.signal);
+      if (controller.signal.aborted) return;
+      if (error) { toast.error(t("Chyba pri komunikácii so serverom")); return; }
+      const rows = data ?? [];
+      setEmployees(rows);
+      if (!rows.length) return;
+      const { data: scheduleRows, error: scheduleError } = await supabase.from("schedules").select("*").in("employee_id", rows.map(employee => employee.id)).abortSignal(controller.signal);
+      if (controller.signal.aborted) return;
+      if (scheduleError) { toast.error(t("Chyba pri komunikácii so serverom")); return; }
+      const map: Record<string, EmployeeSchedule[]> = {};
+      (scheduleRows ?? []).forEach(schedule => { (map[schedule.employee_id] ??= []).push(schedule); });
+      setSchedules(map);
+    };
+    void loadServiceEmployees();
+    return () => controller.abort();
+  }, [selectedServiceId]);
 
   // Derived: grouped subcategories
   const subcategories = useMemo(() => {
@@ -175,34 +182,8 @@ export default function BookingPage() {
 
   const selectedService = services.find((s) => s.id === selectedServiceId) ?? null;
 
-  // Filter employees based on selected service and admin setting
-  const filteredEmployees = useMemo(() => {
-    let result = employees;
-
-    // Filter by service assignment
-    if (selectedServiceId) {
-      result = result.filter(emp => {
-        if (!employeeServiceMap[emp.id]) return true;
-        return employeeServiceMap[emp.id].includes(selectedServiceId);
-      });
-    }
-
-    // Filter admins/owners based on allow_admin_as_provider setting
-    const allowAdminAsProvider = Boolean((business as any)?.allow_admin_as_provider);
-    if (!allowAdminAsProvider) {
-      result = result.filter((emp) => {
-        if (!emp.profile_id) return true;
-        // Find membership for this employee's profile
-        const membership = memberships.find(m => m.profile_id === emp.profile_id);
-        // If no membership, allow (legacy employee)
-        if (!membership) return true;
-        // Allow only employees (not admin/owner) when setting is false
-        return membership.role === "employee";
-      });
-    }
-
-    return result;
-  }, [employees, selectedServiceId, employeeServiceMap, business, memberships]);
+  // The public RPC owns service assignment and provider eligibility rules.
+  const filteredEmployees = employees;
 
   const selectedEmployee = employees.find((e) => e.id === selectedWorkerId) ?? null;
 
@@ -242,21 +223,33 @@ export default function BookingPage() {
       setAvailableSlots([]);
       return;
     }
+    const controller = new AbortController();
     const loadSlots = async () => {
       setLoadingSlots(true);
-      const dayStart = startOfDay(selectedFullDate);
-      const dayEnd = addDays(dayStart, 1);
+      setAvailabilityError(false);
+      setAvailableSlots([]);
+      setSelectedTime(null);
+      const dayRange = salonDayRange(format(selectedFullDate, "yyyy-MM-dd"));
 
-      const { data: existing } = await supabase
-        .from("appointments")
-        .select("start_at, end_at")
-        .eq("employee_id", selectedEmployee.id)
-        .gte("start_at", dayStart.toISOString())
-        .lt("start_at", dayEnd.toISOString())
-        .neq("status", "cancelled");
+      const { data: existing, error } = await supabase.rpc("get_public_busy_intervals", {
+        _business_id: business.id,
+        _employee_id: selectedEmployee.id,
+        _start: dayRange.start,
+        _end: dayRange.end,
+      }).abortSignal(controller.signal);
+      if (controller.signal.aborted) return;
+      if (error) {
+        // Fail closed: a missing/failed availability endpoint is not an empty day.
+        setAvailableSlots([]);
+        setAvailabilityError(true);
+        setLoadingSlots(false);
+        toast.error(t("Chyba pri komunikácii so serverom"));
+        return;
+      }
 
       const slots = generateSlots({
         date: selectedFullDate,
+        timeZone: "Europe/Bratislava",
         serviceDuration: selectedService.duration_minutes,
         serviceBuffer: selectedService.buffer_minutes ?? 0,
         openingHours: (business.opening_hours ?? {}) as BusinessHours,
@@ -270,16 +263,17 @@ export default function BookingPage() {
       setAvailableSlots(slots);
       setLoadingSlots(false);
     };
-    loadSlots();
-  }, [selectedFullDate, selectedEmployee, selectedService, business, schedules, businessHourEntries, dateOverrides]);
+    void loadSlots();
+    return () => controller.abort();
+  }, [selectedFullDate, selectedEmployee, selectedService, business, schedules, businessHourEntries, dateOverrides, slotRefresh]);
 
   // Group available slots
   const timeGroups = useMemo(() => {
     const dopoludnia: string[] = [];
     const popoludni: string[] = [];
     availableSlots.forEach((slot) => {
-      const t = format(slot, "HH:mm");
-      if (slot.getHours() < 12) dopoludnia.push(t);
+      const t = salonTime(slot);
+      if (Number(t.slice(0, 2)) < 12) dopoludnia.push(t);
       else popoludni.push(t);
     });
     return { dopoludnia, popoludni };
@@ -313,7 +307,7 @@ export default function BookingPage() {
     setSubmitting(true);
 
     // Find the actual slot Date
-    const slotDate = availableSlots.find((s) => format(s, "HH:mm") === selectedTime);
+    const slotDate = availableSlots.find((s) => salonTime(s) === selectedTime);
     if (!slotDate) {
       toast.error(t("Vybraný čas už nie je dostupný"));
       setSubmitting(false);
@@ -321,16 +315,14 @@ export default function BookingPage() {
     }
 
     try {
-      const { data, error } = await supabase.functions.invoke("create-public-booking", {
-        body: {
-          business_id: DEMO_BUSINESS_ID,
-          service_id: selectedServiceId,
-          employee_id: selectedWorkerId,
-          start_at: slotDate.toISOString(),
-          customer_name: `${formData.meno} ${formData.priezvisko}`.trim(),
-          customer_email: formData.email,
-          customer_phone: formData.phone || undefined,
-        },
+      const { data, error } = await createPublicBooking(supabase, {
+        business_id: DEMO_BUSINESS_ID,
+        service_id: selectedServiceId,
+        employee_id: selectedWorkerId,
+        start_at: slotDate.toISOString(),
+        customer_name: `${formData.meno} ${formData.priezvisko}`.trim(),
+        customer_email: formData.email,
+        customer_phone: formData.phone || undefined,
       });
 
       if (error || data?.error) {
@@ -627,6 +619,11 @@ export default function BookingPage() {
             {loadingSlots ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : availabilityError ? (
+              <div role="alert" className="text-center py-4 space-y-3">
+                <p>{t("Chyba pri komunikácii so serverom")}</p>
+                <button type="button" className="min-h-[44px] rounded-full border border-border px-4" onClick={() => setSlotRefresh(value => value + 1)}>{language === "en" ? "Try again" : "Skúsiť znova"}</button>
               </div>
             ) : availableSlots.length === 0 ? (
               <p className="text-center text-muted-foreground py-4">{t("Žiadne dostupné termíny v tento deň")}</p>

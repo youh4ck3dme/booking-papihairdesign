@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBusiness } from '@/hooks/useBusiness';
@@ -102,24 +102,47 @@ export class EmployeeConflictError extends Error {
 }
 export function useEmployeeStatusUpdate() {
   const scope = useEmployeeScope();
+  const { session } = useAuth();
   const client = useQueryClient();
   const currentIdentity = useRef(scope);
+  const mounted = useRef(true);
+  const pendingRequests = useRef(new Set<AbortController>());
   currentIdentity.current = scope;
+  useEffect(() => {
+    mounted.current = true;
+    const requests = pendingRequests.current;
+    return () => {
+      mounted.current = false;
+      for (const controller of requests) controller.abort();
+      requests.clear();
+    };
+  }, [scope.userId, scope.businessId, scope.employeeId, scope.status]);
   return useMutation({
     retry: false,
     mutationFn: async ({ appointment, newStatus }: { appointment: EmployeeAppointment; newStatus: EmployeeStatus }) => {
-      if (scope.status !== 'ready' || appointment.business_id !== scope.businessId || appointment.employee_id !== scope.employeeId || !allowedEmployeeTransitions(appointment.status).includes(newStatus)) {
+      if (!mounted.current || scope.status !== 'ready' || !session || session.user.id !== scope.userId || !session.access_token || appointment.business_id !== scope.businessId || appointment.employee_id !== scope.employeeId || !allowedEmployeeTransitions(appointment.status).includes(newStatus)) {
         throw new Error('EMPLOYEE_FORBIDDEN');
       }
-      await ensurePrivateWorker();
-      if (currentIdentity.current.userId !== scope.userId || currentIdentity.current.businessId !== scope.businessId || currentIdentity.current.employeeId !== scope.employeeId || currentIdentity.current.status !== 'ready') throw new Error('EMPLOYEE_FORBIDDEN');
-      let request = supabase.from('appointments').update({ status: newStatus })
-        .eq('id', appointment.id).eq('business_id', scope.businessId!).eq('employee_id', scope.employeeId!).eq('status', appointment.status);
-      if (appointment.updated_at) request = request.eq('updated_at', appointment.updated_at);
-      const { data, error } = await request.select('id').maybeSingle();
-      if (error) throw new Error('EMPLOYEE_UPDATE_FAILED');
-      if (!data) throw new EmployeeConflictError();
+      const controller = new AbortController();
+      pendingRequests.current.add(controller);
+      try {
+        await ensurePrivateWorker();
+        if (!mounted.current || controller.signal.aborted || currentIdentity.current.userId !== scope.userId || currentIdentity.current.businessId !== scope.businessId || currentIdentity.current.employeeId !== scope.employeeId || currentIdentity.current.status !== 'ready') throw new Error('EMPLOYEE_FORBIDDEN');
+        let request = supabase.from('appointments').update({ status: newStatus })
+          // Bind the click to its original principal even if the SDK switches account
+          // between this check and the underlying asynchronous fetchWithAuth call.
+          .setHeader('Authorization', `Bearer ${session.access_token}`)
+          .eq('id', appointment.id).eq('business_id', scope.businessId!).eq('employee_id', scope.employeeId!).eq('status', appointment.status);
+        if (appointment.updated_at) request = request.eq('updated_at', appointment.updated_at);
+        const { data, error } = await request.select('id').abortSignal(controller.signal).maybeSingle();
+        if (error) throw new Error('EMPLOYEE_UPDATE_FAILED');
+        if (!data) throw new EmployeeConflictError();
+      } finally {
+        pendingRequests.current.delete(controller);
+      }
     },
-    onSettled: () => client.invalidateQueries({ queryKey: ['employee', 'appointments'] }),
+    onSettled: () => {
+      if (mounted.current) return client.invalidateQueries({ queryKey: ['employee', 'appointments'] });
+    },
   });
 }

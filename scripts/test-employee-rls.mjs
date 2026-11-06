@@ -42,10 +42,16 @@ try {
   ];
   if (migrations.length !== 5) throw new Error('Expected exactly one dashboard guard migration');
   for (const file of migrations) {
+    if (file.endsWith('_employee_dashboard_status_guard.sql')) {
+      // Reproduce an older production baseline with the known permissive policy.
+      // The dashboard migration itself must remove it before anon isolation passes.
+      sql('CREATE POLICY appointments_select_public ON public.appointments FOR SELECT USING (true);');
+    }
     console.log(`Applying relevant table/auth/RLS migration: ${file}`);
     sql(readFileSync(path.join(root, 'supabase/migrations', file), 'utf8'));
   }
   sql(readFileSync(path.join(root, 'tests/employee-rls.sql'), 'utf8'));
+  sql(readFileSync(path.join(root, 'tests/public-availability.sql'), 'utf8'));
   console.log('PASS: isolated employee RLS and status transition suite');
 } catch (error) {
   console.error(error.message);
