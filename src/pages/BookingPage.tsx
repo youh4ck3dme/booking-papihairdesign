@@ -572,7 +572,8 @@ export default function BookingPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-7 gap-y-4 text-center mb-2">
+              <div className="booking-calendar-scroll" role="region" tabIndex={0} aria-label={language === "sk" ? "Kalendár termínov" : "Appointment calendar"}>
+              <div className="booking-calendar-grid grid grid-cols-7 gap-y-4 text-center mb-2">
                 {["Po", "Ut", "St", "Št", "Pi", "So", "Ne"].map((d) => (
                   <div key={d} className="font-medium text-sm text-muted-foreground">{t(d)}</div>
                 ))}
@@ -613,6 +614,7 @@ export default function BookingPage() {
                     </div>
                   );
                 })}
+              </div>
               </div>
             </div>
           </div>

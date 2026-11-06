@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.use({ locale: 'sk-SK', serviceWorkers: 'block' });
-for (const [width, height] of [[320,568],[390,844],[844,390],[768,1024],[1440,900]]) {
+for (const [width, height] of [[240,640],[320,568],[390,844],[844,390],[768,1024],[1440,900]]) {
   test(`light booking language and offer reveal at ${width}x${height}`, async ({ page }) => {
     await page.setViewportSize({ width, height });
     const writes: string[] = [];
@@ -71,6 +71,13 @@ for (const [width, height] of [[320,568],[390,844],[844,390],[768,1024],[1440,90
       expect(box.height).toBeGreaterThanOrEqual(44);
     }
     await expect(page.getByRole('button', { name: 'Predchádzajúci mesiac', exact: true })).toBeVisible();
+    if (width < 308) {
+      const calendar = page.getByRole('region', { name: 'Kalendár termínov', exact: true });
+      expect(await calendar.evaluate(el => el.scrollWidth > el.clientWidth)).toBe(true);
+      await calendar.focus();
+      await page.keyboard.press('ArrowRight');
+      await expect.poll(() => calendar.evaluate(el => el.scrollLeft)).toBeGreaterThan(0);
+    }
     for (const offer of await page.locator('.booking-offer').all()) {
       await expect(offer).toHaveCSS('transform', 'none');
     }

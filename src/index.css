@@ -142,3 +142,6 @@
 .booking-calendar > div:first-child { flex-wrap: wrap; gap: .5rem; }
 @media (max-width: 374px) { .booking-calendar { margin-inline: -14px; padding-inline: 2px; } }
 .booking-day { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
+.booking-calendar-scroll { overflow-x: auto; overscroll-behavior-x: contain; }
+.booking-calendar-grid { min-width: 308px; }
+body .booking-day:focus-visible { outline-offset: -3px; }

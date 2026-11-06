@@ -56,3 +56,7 @@ iframe, zachovanie výberu a bezpečný spätný jazykový most.
 Konkrétne testované commity, skutočné výsledky, snímky, prípadné neúspešné
 behy a logy patria do odovzdania PR. Táto dokumentácia sama netvrdí PASS
 budúceho behu. Produkcia, DNS, tajomstvá, billing ani GitHub Actions sa nemenia.
+
+Na viewporte užšom ako sedem 44px cieľov má kalendár samostatný horizontálne
+rolovateľný, pomenovaný a klávesnicou dostupný región; vonkajšia aplikácia
+nezískava horizontálne pretečenie. Regresia navyše pokrýva 240px viewport.
