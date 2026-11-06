@@ -1,3 +1,4 @@
+import { LogoIcon } from "@/components/LogoIcon";
 import { useBookingLanguage } from "@/lib/booking-language";
 import { revealBookingOffer as revealOffer } from "@/lib/reveal-booking-offer";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
@@ -384,9 +385,7 @@ export default function BookingPage() {
       <div className="min-h-screen bg-background">
         <header className="sticky top-0 z-50 px-4 py-3 flex items-center justify-between bg-background/90 border-b border-border backdrop-blur-sm">
           <div className="flex flex-col">
-            <span className="text-lg font-bold tracking-widest uppercase font-serif text-foreground">
-              PAPI <GoldText>HAIR</GoldText> DESIGN
-            </span>
+            <LogoIcon size="md" className="booking-brand-logo" />
           </div>
         </header>
         <div className="max-w-md mx-auto px-4 py-12 text-center space-y-6">
@@ -428,9 +427,7 @@ export default function BookingPage() {
       {/* Header */}
       <header className="sticky top-0 z-50 px-4 py-3 flex items-center justify-between bg-background/90 border-b border-border backdrop-blur-sm">
         <div className="flex flex-col">
-          <span className="text-lg font-bold tracking-widest uppercase font-serif">
-            PAPI <GoldText>HAIR</GoldText> DESIGN
-          </span>
+          <LogoIcon size="md" className="booking-brand-logo" />
           <span className="text-xs text-muted-foreground">papihairdesign.sk</span>
         </div>
         <div className="flex items-center gap-4">

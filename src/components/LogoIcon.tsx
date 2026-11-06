@@ -1,4 +1,4 @@
-import logoIcon from "@/assets/logo-icon.webp";
+import logoIcon from "@/assets/papi-logo.png";
 
 interface LogoIconProps {
   className?: string;
@@ -6,9 +6,9 @@ interface LogoIconProps {
 }
 
 const sizeMap = {
-  sm: "w-8 h-8",
-  md: "w-10 h-10",
-  lg: "w-14 h-14",
+  sm: "w-[96px] h-auto",
+  md: "w-[160px] h-auto",
+  lg: "w-[240px] h-auto",
 };
 
 export function LogoIcon({ className = "", size = "md" }: LogoIconProps) {
@@ -16,7 +16,8 @@ export function LogoIcon({ className = "", size = "md" }: LogoIconProps) {
     <img
       src={logoIcon}
       alt="PAPI HAIR DESIGN"
-      className={`${sizeMap[size]} rounded-full object-cover ${className}`}
+      width={359} height={142}
+      className={`${sizeMap[size]} max-w-full min-w-0 object-contain ${className}`}
     />
   );
 }

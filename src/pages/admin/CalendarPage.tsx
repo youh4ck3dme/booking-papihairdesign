@@ -283,7 +283,7 @@ export default function CalendarPage() {
                   </div>
                 )}
                 <div className="flex items-center gap-2 text-sm">
-                  <LogoIcon size="sm" className="w-4 h-4 flex-shrink-0" />
+                  <LogoIcon size="sm" className="!w-[72px] h-auto flex-shrink-0" />
                   <span>{selectedEvent.resource?.services?.name_sk} · {selectedEvent.resource?.employees?.display_name}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">

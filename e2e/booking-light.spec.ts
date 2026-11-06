@@ -29,6 +29,13 @@ for (const [width, height] of [[320,568],[390,844],[844,390],[768,1024],[1440,90
     const headingFonts = await page.evaluate(() => document.fonts.load('500 24px "Bodoni Moda"', 'PAPI ĽŠŤŽÁÉÍÓÚÝČĎŇÔÄŔĹ').then(fonts => fonts.map(font => font.status)));
     expect(headingFonts.length).toBeGreaterThan(0);
     expect(headingFonts.every(status => status === 'loaded')).toBe(true);
+    const logo = page.locator('header img[alt="PAPI HAIR DESIGN"]');
+    await expect(logo).toHaveCount(1);
+    await expect(logo).toBeInViewport({ ratio: 1 });
+    expect(await logo.evaluate((image: HTMLImageElement) => [image.naturalWidth, image.naturalHeight])).toEqual([359, 142]);
+    const logoBox = (await logo.boundingBox())!;
+    expect(logoBox.width).toBeGreaterThanOrEqual(140);
+    expect(Math.abs(logoBox.width / logoBox.height - 359 / 142)).toBeLessThan(0.01);
     await expect(page.locator('html')).not.toHaveClass(/dark/);
     const english = page.getByRole('button', { name: 'Switch to English', exact: true });
     expect(Math.round((await page.locator('.language-control').boundingBox())!.height)).toBe(36);

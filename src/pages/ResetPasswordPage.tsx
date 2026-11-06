@@ -70,7 +70,7 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-md">
         <div className="flex items-center justify-center gap-2 mb-8">
           <LogoIcon size="md" />
-          <span className="text-2xl font-bold text-foreground">PAPI HAIR DESIGN</span>
+
         </div>
 
         <Card className="shadow-lg border-gold/20 bg-card/90 backdrop-blur-sm">

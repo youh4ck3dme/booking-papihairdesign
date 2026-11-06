@@ -19,8 +19,8 @@ Bodoni Moda: https://fontsource.org/fonts/bodoni-moda/about . Google Fonts zdroj
 |---|---|---|
 | papier | #fcfcfb | karty, hlavičky |
 | plátno | #f8f8f6 | svetlé pozadie |
-| atrament | #191919 | nadpisy a hlavný text |
-| sekundárny text | #67625a | vysvetlenia a popisy |
+| atrament | #101010 | nadpisy a hlavný text |
+| sekundárny text | #48443e | vysvetlenia a popisy |
 | zlatá | #c8a858 | akcenty a aktívne stavy |
 | zlatý text | #785b22 | malé zlaté texty a fokus |
 | zlatý okraj | #a48442 | tenké obrysy ovládania |
@@ -40,3 +40,5 @@ Zachováva sa existujúci svetlý režim. Tmavá polovica fotografie sa využív
 Angular a cross-origin rezervačná aplikácia majú samostatné zdroje a nasadenia. Rovnaké brand-fonts.css a reference-brand.css sa udržiavajú v oboch projektoch. Angular CSS neupravuje obsah živého iframe. Zmena živého iframe vyžaduje osobitné nasadenie; toto zadanie nemení produkciu, tajomstvá, DNS ani billing.
 
 Kompaktné jazykové ovládanie: viditeľná výška skupiny je 36 px namiesto 54 px (o tretinu menej), vnútorné tlačidlo 28 px. Rozšírená neviditeľná plocha tlačidla zachováva 44 px výšku dotyku. Angular menu vrátane Objavte a jeho odkazov sa radí podľa dĺžky aktuálne zobrazeného prekladu zostupne; zhodné dĺžky majú stabilné poradie. Zoradenie podľa prekladu sa zapne až po hydratácii.
+
+Nové podpisové logo: dodaný logo.png sa používa bez zmeny obrazového obsahu, so zachovaním pomeru 359:142. Bežný atrament bol stmavený na #101010, sekundárny text na #48443e. Svetlé a zlaté plochy zostávajú zachované.

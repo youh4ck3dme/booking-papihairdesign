@@ -62,7 +62,7 @@ export default function AppointmentDetailSheet({
               <span className="text-white/80">{appointment.customer_name}</span>
             </div>
             <div className="flex items-center gap-3 text-sm">
-              <LogoIcon size="sm" className="w-4 h-4 shrink-0 opacity-30" />
+              <LogoIcon size="sm" className="!w-[72px] h-auto shrink-0" />
               <span className="text-white/80">{appointment.employee_name}</span>
             </div>
           </div>

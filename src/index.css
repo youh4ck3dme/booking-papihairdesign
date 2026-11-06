@@ -8,10 +8,10 @@
 @layer base {
   :root {
     --background: 60 12% 97%;
-    --foreground: 0 0% 10%;
+    --foreground: 0 0% 6.3%;
 
     --card: 40 15% 99%;
-    --card-foreground: 20 15% 10%;
+    --card-foreground: 0 0% 6.3%;
 
     --popover: 40 15% 99%;
     --popover-foreground: 20 15% 10%;
@@ -23,7 +23,7 @@
     --secondary-foreground: 20 25% 18%;
 
     --muted: 35 12% 93%;
-    --muted-foreground: 20 8% 40%;
+    --muted-foreground: 20 8% 28%;
 
     --accent: 38 25% 90%;
     --accent-foreground: 20 30% 22%;
@@ -128,7 +128,7 @@
 
 
 /* Reveal only the newly available offer, never scale the application viewport. */
-.booking-offer { scroll-margin-top: 5rem; animation: booking-offer-reveal 280ms ease-out both; }
+.booking-offer { scroll-margin-top: calc(8.5rem + env(safe-area-inset-top, 0px)); animation: booking-offer-reveal 280ms ease-out both; }
 @keyframes booking-offer-reveal { from { opacity: 0; transform: translateY(14px) scale(0.985); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .booking-offer { animation: none; } }
 .text-primary { color: var(--papi-gold-ink); }
@@ -145,3 +145,5 @@
 .booking-shell { min-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
 @supports (height: 100dvh) { .booking-shell { min-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); } }
 .booking-shell > header { top: env(safe-area-inset-top, 0px); }
+
+.booking-brand-logo { max-width:min(160px, calc(100vw - 2rem - 112px)); }
