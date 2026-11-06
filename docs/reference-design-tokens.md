@@ -7,7 +7,7 @@ Referencia: používateľom dodaná fotografia PHOTO-2026-11-06-08-44-05.jpg (6.
 Presný pôvodný font z rasterizovaného obrázka nemožno spoľahlivo určiť. Veľké PAPI má znaky vysoko kontrastného pätkového štýlu Didone (Didot/Bodoni): tenké serify, výrazný rozdiel medzi hrubými a vlasovými ťahmi. Použitá blízka webová náhrada je **Bodoni Moda**; nejde o tvrdenie identickej pôvodnej rodiny. Referenčný bezpätkový riadok HAIR DESIGN je interpretovaný cez **Inter** s väčšími rozostupmi.
 
 - H1–H6: Bodoni Moda, optická veľkosť auto; H1/H2 váha 500, H3–H6 váha 600. Veľkosti zostávajú primerané kontextu existujúcich komponentov.
-- Texty, formuláre, navigácia a tlačidlá: Inter 400–700.
+- Texty, formuláre, navigácia a tlačidlá: Inter: bežne 400–700, dostupný skutočný variabilný rozsah 100–900 aj pre ľahké a výrazné váhy.
 - Lokálne WOFF2 súbory obsahujú latin a latin-ext, vrátane slovenskej diakritiky. Žiadna nová externá fontová požiadavka pri zobrazení.
 - Font-display swap; existujúce lokálne fallbacky zostávajú dostupné pri pomalom načítaní.
 
