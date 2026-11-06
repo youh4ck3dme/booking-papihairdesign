@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.use({ locale: 'sk-SK', serviceWorkers: 'block' });
-for (const [width, height] of [[320,568],[390,844],[844,390],[768,1024],[1440,900]]) {
+for (const [width, height] of [[240,640],[320,568],[390,844],[844,390],[768,1024],[1440,900]]) {
   test(`light booking language and offer reveal at ${width}x${height}`, async ({ page }) => {
     await page.setViewportSize({ width, height });
     const writes: string[] = [];
@@ -34,7 +34,8 @@ for (const [width, height] of [[320,568],[390,844],[844,390],[768,1024],[1440,90
     await expect(logo).toBeInViewport({ ratio: 1 });
     expect(await logo.evaluate((image: HTMLImageElement) => [image.naturalWidth, image.naturalHeight])).toEqual([359, 142]);
     const logoBox = (await logo.boundingBox())!;
-    expect(logoBox.width).toBeGreaterThanOrEqual(140);
+    if (width >= 320) expect(logoBox.width).toBeGreaterThanOrEqual(140);
+    else expect(logoBox.width).toBeGreaterThanOrEqual(96);
     expect(Math.abs(logoBox.width / logoBox.height - 359 / 142)).toBeLessThan(0.01);
     await expect(page.locator('html')).not.toHaveClass(/dark/);
     const english = page.getByRole('button', { name: 'Switch to English', exact: true });
@@ -71,6 +72,13 @@ for (const [width, height] of [[320,568],[390,844],[844,390],[768,1024],[1440,90
       expect(box.height).toBeGreaterThanOrEqual(44);
     }
     await expect(page.getByRole('button', { name: 'Predchádzajúci mesiac', exact: true })).toBeVisible();
+    if (width < 308) {
+      const calendar = page.getByRole('region', { name: 'Kalendár termínov', exact: true });
+      expect(await calendar.evaluate(el => el.scrollWidth > el.clientWidth)).toBe(true);
+      await calendar.focus();
+      await page.keyboard.press('ArrowRight');
+      await expect.poll(() => calendar.evaluate(el => el.scrollLeft)).toBeGreaterThan(0);
+    }
     for (const offer of await page.locator('.booking-offer').all()) {
       await expect(offer).toHaveCSS('transform', 'none');
     }
@@ -78,6 +86,9 @@ for (const [width, height] of [[320,568],[390,844],[844,390],[768,1024],[1440,90
     await page.getByRole('button', { name: 'Vyberte pracovníka', exact: true }).click();
     expect(await page.locator('[aria-label="Ponuka pracovníkov"]').evaluate(el => el.getAnimations().length)).toBe(0);
     await page.addStyleTag({ content: 'html { font-size: 200%; }' });
+    for (const button of await page.locator('header .language-control button').all()) {
+      await expect(button).toBeInViewport({ ratio: 1 });
+    }
     const lastWeek = page.getByRole('button', { name: '28', exact: true });
     await lastWeek.scrollIntoViewIfNeeded();
     await expect(lastWeek).toBeInViewport({ ratio: 1 });
