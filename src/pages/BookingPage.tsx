@@ -301,7 +301,7 @@ export default function BookingPage() {
     const result = contactSchema.safeParse(formData);
     if (!result.success) {
       const errs: Record<string, string> = {};
-      result.error.errors.forEach((e) => { if (e.path[0]) errs[e.path[0] as string] = e.message; });
+      result.error.issues.forEach((e) => { if (e.path[0]) errs[e.path[0] as string] = e.message; });
       setContactErrors(errs);
       return;
     }

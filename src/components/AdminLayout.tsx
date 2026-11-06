@@ -17,6 +17,7 @@ import { LogoIcon } from "@/components/LogoIcon";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { EmployeeLayout } from "@/features/employee/EmployeeLayout";
 
 const allNavItems = [
   { title: "Prehľad", url: "/admin", icon: LayoutDashboard, roles: ["owner", "admin", "employee"] },
@@ -124,6 +125,9 @@ export function AdminSidebar() {
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const { needsOnboarding, loading: onboardingLoading, markComplete } = useOnboarding();
+  const { isEmployee } = useBusiness();
+
+  if (isEmployee) return <EmployeeLayout>{children}</EmployeeLayout>;
 
   if (onboardingLoading) {
     return (
