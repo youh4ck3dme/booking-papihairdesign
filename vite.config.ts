@@ -1,3 +1,5 @@
+/// <reference lib="webworker" />
+// Workbox route callbacks below are serialized and executed in the worker.
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
