@@ -91,10 +91,12 @@ test('unsupported host opens the website safely in a separate tab', async ({page
   await page.goto(hostUrl);
   const link=page.frameLocator('iframe').getByRole('link',{name:'Späť na web',exact:true});
   await expect(link).toHaveAttribute('target','_blank');
+  await expect(link).toHaveAttribute('rel','noopener noreferrer');
   const nextPage=context.waitForEvent('page'); await link.click();const opened=await nextPage;
   await expect(opened).toHaveURL(angular+'/');
   await expect(opened.locator('app-header')).toBeVisible();
-  expect(await opened.opener()).toBeNull();
+  // Playwright tracks popup ancestry even when the browser correctly clears window.opener.
+  expect(await opened.evaluate(() => window.opener === null)).toBe(true);
   await expect(page).toHaveURL(hostUrl);
   await expect(page.frameLocator('iframe').getByRole('heading',{name:'Vyberte kategóriu',exact:true})).toBeVisible();
   expect(fixture.writes).toEqual([]);expect(fixture.blocked).toEqual([]);
