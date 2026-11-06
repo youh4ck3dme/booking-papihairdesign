@@ -60,3 +60,7 @@ budúceho behu. Produkcia, DNS, tajomstvá, billing ani GitHub Actions sa nemeni
 Na viewporte užšom ako sedem 44px cieľov má kalendár samostatný horizontálne
 rolovateľný, pomenovaný a klávesnicou dostupný región; vonkajšia aplikácia
 nezískava horizontálne pretečenie. Regresia navyše pokrýva 240px viewport.
+
+Hlavička používa prirodzený stránkový scroll: `overflow-x: clip` na shelli
+nevytvára neúmyselný druhý scroll kontajner pre sticky. Pri 200 % texte
+regresia vyžaduje celé SK/EN ovládanie v zornom poli.
