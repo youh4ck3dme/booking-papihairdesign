@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { installPublicBookingFixture } from '../e2e/helpers/public-booking-fixture';
+import { createServer } from 'node:http';
 
 const angular = new URL(process.env.PAPI_ANGULAR_URL!).origin;
 const booking = new URL(process.env.PAPI_BOOKING_URL!).origin;
@@ -78,17 +79,24 @@ for (const role of ['employee','admin','owner','customer'] as const) {
   });
 }
 
-test('legacy host without the protocol opens the website safely in a separate tab', async ({page,context}) => {
+test('unsupported host opens the website safely in a separate tab', async ({page,context}) => {
   const fixture=await installPublicBookingFixture(context);
-  await context.route(angular+'/legacy-fixture',route=>route.fulfill({contentType:'text/html',body:`<iframe title="Legacy booking" style="width:100%;height:90vh" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" src="${booking}/booking?lang=sk"></iframe>`}));
-  await page.goto(angular+'/legacy-fixture');
+  // A genuine local HTTP response preserves Chrome's address-space checks.
+  // Browser-intercepted synthetic documents have a different network context.
+  const host=createServer((_request,response)=>{response.writeHead(200,{'Content-Type':'text/html'});response.end(`<iframe title="Legacy booking" style="width:100%;height:90vh" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" src="${booking}/booking?lang=sk"></iframe>`);});
+  await new Promise<void>(resolve=>host.listen(0,'127.0.0.1',resolve));
+  const address=host.address(); if(!address||typeof address==='string')throw new Error('Fixture host not listening');
+  const hostUrl=`http://127.0.0.1:${address.port}/`;
+  try {
+  await page.goto(hostUrl);
   const link=page.frameLocator('iframe').getByRole('link',{name:'Späť na web',exact:true});
   await expect(link).toHaveAttribute('target','_blank');
   const nextPage=context.waitForEvent('page'); await link.click();const opened=await nextPage;
   await expect(opened).toHaveURL(angular+'/');
   await expect(opened.locator('app-header')).toBeVisible();
   expect(await opened.opener()).toBeNull();
-  await expect(page).toHaveURL(angular+'/legacy-fixture');
+  await expect(page).toHaveURL(hostUrl);
   await expect(page.frameLocator('iframe').getByRole('heading',{name:'Vyberte kategóriu',exact:true})).toBeVisible();
   expect(fixture.writes).toEqual([]);expect(fixture.blocked).toEqual([]);
+  } finally { host.closeAllConnections();await new Promise<void>(resolve=>host.close(()=>resolve())); }
 });
