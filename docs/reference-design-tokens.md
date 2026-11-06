@@ -42,3 +42,5 @@ Angular a cross-origin rezervačná aplikácia majú samostatné zdroje a nasade
 Kompaktné jazykové ovládanie: viditeľná výška skupiny je 36 px namiesto 54 px (o tretinu menej), vnútorné tlačidlo 28 px. Rozšírená neviditeľná plocha tlačidla zachováva 44 px výšku dotyku. Angular menu vrátane Objavte a jeho odkazov sa radí podľa dĺžky aktuálne zobrazeného prekladu zostupne; zhodné dĺžky majú stabilné poradie. Zoradenie podľa prekladu sa zapne až po hydratácii.
 
 Nové podpisové logo: dodaný logo.png sa používa bez zmeny obrazového obsahu, so zachovaním pomeru 359:142. Bežný atrament bol stmavený na #101010, sekundárny text na #48443e. Svetlé a zlaté plochy zostávajú zachované.
+
+Odhalené ponuky po skončení animácie nezachovávajú transformáciu cez animation-fill-mode; pokojový text sa vykresľuje natívne.

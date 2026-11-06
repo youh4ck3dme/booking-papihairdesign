@@ -64,6 +64,9 @@ for (const [width, height] of [[320,568],[390,844],[844,390],[768,1024],[1440,90
     await page.keyboard.press('Space');
     await expect(workerChoice).toBeChecked();
     await expect(page.getByRole('heading', { name: 'Vyberte dátum', exact: true })).toBeVisible();
+    for (const offer of await page.locator('.booking-offer').all()) {
+      await expect(offer).toHaveCSS('transform', 'none');
+    }
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.getByRole('button', { name: 'Vyberte pracovníka', exact: true }).click();
     expect(await page.locator('[aria-label="Ponuka pracovníkov"]').evaluate(el => el.getAnimations().length)).toBe(0);

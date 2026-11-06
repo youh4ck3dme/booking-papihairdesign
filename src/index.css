@@ -128,7 +128,7 @@
 
 
 /* Reveal only the newly available offer, never scale the application viewport. */
-.booking-offer { scroll-margin-top: calc(8.5rem + env(safe-area-inset-top, 0px)); animation: booking-offer-reveal 280ms ease-out both; }
+.booking-offer { scroll-margin-top: calc(8.5rem + env(safe-area-inset-top, 0px)); animation: booking-offer-reveal 280ms ease-out; }
 @keyframes booking-offer-reveal { from { opacity: 0; transform: translateY(14px) scale(0.985); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .booking-offer { animation: none; } }
 .text-primary { color: var(--papi-gold-ink); }
