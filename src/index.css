@@ -135,6 +135,7 @@
 .language-control button[aria-pressed="true"] { background:#d9a521; color:#24201d; }
 .language-control button:hover { color:#24201d; }
 .language-control button:focus-visible { outline:2px solid #82600c; outline-offset:2px; }
+.booking-choice:has(input:focus-visible) { outline:2px solid #82600c; outline-offset:3px; }
 
 /* Body owns safe-area padding once; the booking shell fills the remaining area. */
 .booking-shell { min-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }

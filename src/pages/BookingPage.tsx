@@ -485,25 +485,27 @@ export default function BookingPage() {
             <StepHeader num="2" title={t("Vyberte službu")} onReveal={() => revealOffer(servicesOffer.current)} />
             <div className="flex flex-col gap-3">
               {filteredServices.map((srv) => (
-                <div
+                <label
                   key={srv.id}
-                  onClick={() => { setSelectedServiceId(srv.id); setSelectedWorkerId(null); setSelectedDate(null); setSelectedTime(null); }}
-                  className={`border rounded-[2rem] p-4 flex items-center gap-4 cursor-pointer transition-all duration-200 ${selectedServiceId === srv.id
+                  className={`booking-choice border rounded-[2rem] p-4 flex items-center gap-4 cursor-pointer transition-all duration-200 ${selectedServiceId === srv.id
                     ? "border-primary bg-card"
                     : "border-border bg-card"
                     }`}
                 >
-                  <RadioIcon selected={selectedServiceId === srv.id} />
+                  <input type="radio" name="booking-service" value={srv.id} checked={selectedServiceId === srv.id}
+                    aria-label={t(srv.name_sk)} aria-describedby={`service-details-${srv.id}`} className="sr-only"
+                    onChange={() => { setSelectedServiceId(srv.id); setSelectedWorkerId(null); setSelectedDate(null); setSelectedTime(null); }} />
+                  <span aria-hidden="true"><RadioIcon selected={selectedServiceId === srv.id} /></span>
                   <div className="flex flex-col flex-1">
                     <span className="font-bold text-sm text-foreground">{t(srv.name_sk)}</span>
-                    <span className="text-sm text-muted-foreground">
+                    <span id={`service-details-${srv.id}`} className="text-sm text-muted-foreground">
                       {srv.duration_minutes} min
                       {srv.price != null && (
                         <> – <GoldText className="font-medium">{srv.price} €</GoldText></>
                       )}
                     </span>
                   </div>
-                </div>
+                </label>
               ))}
             </div>
           </div>
@@ -515,15 +517,17 @@ export default function BookingPage() {
             <StepHeader num="3" title={t("Vyberte pracovníka")} onReveal={() => revealOffer(workersOffer.current)} />
             <div className="flex flex-col gap-4">
               {filteredEmployees.map((w) => (
-                <div
+                <label
                   key={w.id}
-                  onClick={() => { setSelectedWorkerId(w.id); setSelectedDate(null); setSelectedTime(null); }}
-                  className={`border rounded-[2rem] p-2 flex items-center gap-4 cursor-pointer transition-all duration-200 ${selectedWorkerId === w.id
+                  className={`booking-choice border rounded-[2rem] p-2 flex items-center gap-4 cursor-pointer transition-all duration-200 ${selectedWorkerId === w.id
                     ? "border-primary bg-card"
                     : "border-border bg-card"
                     }`}
                 >
-                  <div className="pl-2"><RadioIcon selected={selectedWorkerId === w.id} /></div>
+                  <input type="radio" name="booking-worker" value={w.id} checked={selectedWorkerId === w.id}
+                    aria-label={w.display_name} className="sr-only"
+                    onChange={() => { setSelectedWorkerId(w.id); setSelectedDate(null); setSelectedTime(null); }} />
+                  <div className="pl-2" aria-hidden="true"><RadioIcon selected={selectedWorkerId === w.id} /></div>
                   <div className="flex w-full h-24 rounded-2xl overflow-hidden border border-primary/30">
                     <div className="w-1/3 h-full relative">
                       <img
@@ -536,7 +540,7 @@ export default function BookingPage() {
                       <span className="font-bold text-lg tracking-wide text-primary">{w.display_name}</span>
                     </div>
                   </div>
-                </div>
+                </label>
               ))}
             </div>
           </div>
