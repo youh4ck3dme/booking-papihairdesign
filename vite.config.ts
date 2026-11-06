@@ -5,6 +5,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
+import { resolvePapiWebsiteUrl } from './src/lib/public-integration-config';
 
 // https://vitejs.dev/config/ – env reload
 export default defineConfig(({ mode }) => {
@@ -18,9 +19,11 @@ export default defineConfig(({ mode }) => {
     stripBom(env.VITE_SUPABASE_PUBLISHABLE_KEY) ||
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1ZHdqZ2Rpanlsc2djbm5jeGVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MTI5OTAsImV4cCI6MjA4NzA4ODk5MH0.9BknkyJShiVQgTBuO-Ulx9eTgrERxxzLth0-E0_Y8IU";
   const supabaseProjectId = stripBom(env.VITE_SUPABASE_PROJECT_ID) || "eudwjgdijylsgcnncxeg";
+  const websiteUrl = resolvePapiWebsiteUrl(stripBom(env.VITE_PAPI_WEBSITE_URL));
 
   return {
     define: {
+      "import.meta.env.VITE_PAPI_WEBSITE_URL": JSON.stringify(websiteUrl),
       "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(supabaseUrl),
       "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(supabasePublishableKey),
       "import.meta.env.VITE_SUPABASE_PROJECT_ID": JSON.stringify(supabaseProjectId),

@@ -31,3 +31,4 @@ dist-ssr
 
 # E2E / Playwright
 e2e-results
+integration/results/

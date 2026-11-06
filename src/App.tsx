@@ -15,7 +15,7 @@ import { Loader2 } from "lucide-react";
 const AdminLayout = lazy(() => import("@/components/AdminLayout").then(m => ({ default: m.AdminLayout })));
 const CookieConsent = lazy(() => import("@/components/CookieConsent"));
 
-import LiquidPlayground from "./pages/LiquidPlayground";
+import BookingEntryRedirect from "./components/BookingEntryRedirect";
 const DemoPage = lazy(() => import("./pages/DemoPage"));
 const BookingPage = lazy(() => import("./pages/BookingPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -64,7 +64,7 @@ const App = () => (
         <AuthProvider>
           <Suspense fallback={<LazyFallback />}>
             <Routes>
-              <Route path="/" element={<LiquidPlayground />} />
+              <Route path="/" element={<BookingEntryRedirect />} />
               <Route path="/demo" element={<DemoPage />} />
               <Route path="/booking" element={<BookingPage />} />
               

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { notifyPapiParent } from './papi-parent';
 export type BookingLanguage = 'sk' | 'en';
 export const bookingEnglish: Record<string, string> = {
   "Vyberte kategóriu": "Choose a category",
@@ -45,6 +46,7 @@ export const bookingEnglish: Record<string, string> = {
   "So": "Sat",
   "Ne": "Sun",
   "Späť": "Back",
+  "Späť na web": "Back to website",
   "Nová rezervácia": "New booking",
   "Rezervácia potvrdená": "Booking confirmed",
   "Žiadne voľné termíny": "No available times",
@@ -112,12 +114,7 @@ export function useBookingLanguage() {
   useEffect(() => {
     document.documentElement.lang = language;
     try { localStorage.setItem('papi_lang', language); } catch { /* Storage is optional. */ }
-    if (window.parent !== window && document.referrer) {
-      const origin = new URL(document.referrer).origin;
-      if (['https://papihairdesign.sk', 'https://www.papihairdesign.sk', 'https://127.0.0.1:3002', 'https://localhost:3002'].includes(origin)) {
-        window.parent.postMessage({ type: 'papi:language', language }, origin);
-      }
-    }
+    notifyPapiParent({ type: 'papi:language', language });
   }, [language]);
   return { language, setLanguage, t: (text: string) => translateBooking(text, language) };
 }

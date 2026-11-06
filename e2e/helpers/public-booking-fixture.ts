@@ -2,8 +2,8 @@ import type { BrowserContext } from '@playwright/test';
 import { EMPLOYEE_A, installEmployeeFixture } from './employee-fixture';
 export const PUBLIC_BUSINESS = 'a1b2c3d4-0000-0000-0000-000000000001';
 export interface BusyInterval { start_at: string; end_at: string }
-export async function installPublicBookingFixture(context: BrowserContext, busyIntervals: BusyInterval[] = [], options: { simulateCreate?: boolean; initialEmployeeName?: string } = {}) {
-  const state = await installEmployeeFixture(context, { signedIn: false });
+export async function installPublicBookingFixture(context: BrowserContext, busyIntervals: BusyInterval[] = [], options: { simulateCreate?: boolean; initialEmployeeName?: string; auth?: Parameters<typeof installEmployeeFixture>[1] } = {}) {
+  const state = await installEmployeeFixture(context, { signedIn: false, ...options.auth });
   const busyRequests: Record<string, unknown>[] = [];
   const simulatedCreates: Record<string, unknown>[] = [];
   const employeeRequests: Record<string, unknown>[] = [];
@@ -15,6 +15,12 @@ export async function installPublicBookingFixture(context: BrowserContext, busyI
     if (url.hostname !== 'booking-fixture.invalid') {
       state.blocked.push(`${request.method()} ${url.origin}${url.pathname}`); return route.abort();
     }
+    const table = url.pathname.split('/').pop() ?? '';
+    const privateBusiness = table === 'businesses' && (url.searchParams.get('select') ?? '*').split(',').some(column => !['opening_hours', 'lead_time_minutes', 'max_days_ahead'].includes(column.trim()));
+    // Compose the public catalogue with the existing authenticated fixture;
+    // public/signed-out requests still retain the strict deny rules below.
+    if (options.auth?.signedIn === true && request.headers()['authorization']?.endsWith('.fixture-signature') &&
+        (['profiles', 'memberships', 'employees', 'appointments'].includes(table) || privateBusiness)) return route.fallback();
     if (request.method() === 'POST' && url.pathname === '/rest/v1/rpc/get_public_bookable_employees') {
       const body = request.postDataJSON() as Record<string, unknown>;
       if (Object.keys(body).length !== 2 || body._business_id !== PUBLIC_BUSINESS || ![null, 'service-1'].includes(body._service_id as string | null)) {
@@ -48,7 +54,6 @@ export async function installPublicBookingFixture(context: BrowserContext, busyI
     if (request.method() !== 'GET') {
       state.blocked.push(`${request.method()} ${url.pathname}`); return route.fulfill({ status: 405, body: '{}' });
     }
-    const table = url.pathname.split('/').pop() ?? '';
     if (['appointments', 'employees', 'memberships', 'employee_services'].includes(table)) {
       state.blocked.push(`Forbidden public direct ${table} read`); return route.fulfill({ status: 403, body: '{}' });
     }
