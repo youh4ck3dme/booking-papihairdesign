@@ -334,7 +334,10 @@ test('public availability uses timestamp-only RPC and excludes the occupied time
   await page.getByRole('radio', { name: 'Dámske strihy', exact: true }).focus(); await page.keyboard.press('Space');
   await page.getByRole('radio', { name: 'Test Stylist', exact: true }).focus(); await page.keyboard.press('Space');
   await page.getByRole('button', { name: '7', exact: true }).click();
-  await expect(page.getByRole('button', { name: '10:45', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '11:00', exact: true })).toBeVisible();
+  const offeredTimes = await page.getByRole('button', { name: /^\d{2}:\d{2}$/ }).allTextContents();
+  expect(offeredTimes[0].trim()).toBe('11:00'); // Existing public policy uses a 30-minute grid.
+  await expect(page.getByRole('button', { name: '11:30', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: '10:00', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: '10:15', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: '10:30', exact: true })).toHaveCount(0);
@@ -361,7 +364,7 @@ test('public availability RPC failure offers no times and recovers through an ex
   expect(fixture.busyRequests).toHaveLength(1);
   fixture.busyError = false;
   await page.getByRole('button', { name: 'Skúsiť znova', exact: true }).click();
-  await expect(page.getByRole('button', { name: '10:45', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '11:00', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: '10:00', exact: true })).toHaveCount(0);
   await expect(availabilityError).toHaveCount(0);
   expect(fixture.busyRequests).toHaveLength(2);
@@ -377,17 +380,17 @@ test('valid public submit uses one simulated booking RPC with salon UTC time and
   await page.getByRole('radio', { name: 'Dámske strihy', exact: true }).focus(); await page.keyboard.press('Space');
   await page.getByRole('radio', { name: 'Test Stylist', exact: true }).focus(); await page.keyboard.press('Space');
   await page.getByRole('button', { name: '7', exact: true }).click();
-  await page.getByRole('button', { name: '10:45', exact: true }).click();
+  await page.getByRole('button', { name: '11:00', exact: true }).click();
   await page.getByPlaceholder('Meno', { exact: true }).fill('Test');
   await page.getByPlaceholder('Priezvisko', { exact: true }).fill('Fixture');
   await page.getByPlaceholder('Email', { exact: true }).fill('fixture@example.invalid');
   await page.getByText('všeobecnými obchodnými podmienkami', { exact: true }).click();
   await page.getByRole('button', { name: 'REZERVOVAŤ ONLINE', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Rezervácia potvrdená!', exact: true })).toBeVisible();
-  await expect(page.getByText('10:45', { exact: true })).toBeVisible();
+  await expect(page.getByText('11:00', { exact: true })).toBeVisible();
   expect(fixture.employeeRequests.some(request => request._service_id === null)).toBe(true);
   expect(fixture.employeeRequests.some(request => request._service_id === 'service-1')).toBe(true);
-  expect(fixture.simulatedCreates).toEqual([{ business_id: 'a1b2c3d4-0000-0000-0000-000000000001', service_id: 'service-1', employee_id: EMPLOYEE_A, start_at: '2026-11-07T09:45:00.000Z', customer_name: 'Test Fixture', customer_email: 'fixture@example.invalid' }]);
+  expect(fixture.simulatedCreates).toEqual([{ business_id: 'a1b2c3d4-0000-0000-0000-000000000001', service_id: 'service-1', employee_id: EMPLOYEE_A, start_at: '2026-11-07T10:00:00.000Z', customer_name: 'Test Fixture', customer_email: 'fixture@example.invalid' }]);
   expect(fixture.blocked).toEqual([]); // Includes any attempted Edge fallback or unallowlisted mutation.
   expect(fixture.writes).toEqual([]);
 });
