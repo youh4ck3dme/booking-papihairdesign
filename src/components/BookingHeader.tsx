@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowUpRight, LayoutDashboard } from "lucide-react";
 import { LogoIcon } from "@/components/LogoIcon";
 import { translateBooking, type BookingLanguage } from "@/lib/booking-language";
+import { PAPI_WEBSITE_URL } from "@/lib/papi-links";
 import "./booking-header.css";
 
 interface BookingHeaderProps {
@@ -35,7 +36,7 @@ export default function BookingHeader({ language, onLanguageChange }: BookingHea
             <LayoutDashboard aria-hidden="true" size={18} />
             <span>Dashboard</span>
           </Link>
-          <a className="booking-header__link booking-header__link--website" href="https://papihairdesign.sk/">
+          <a className="booking-header__link booking-header__link--website" href={PAPI_WEBSITE_URL}>
             <ArrowUpRight aria-hidden="true" size={18} />
             <span>{translateBooking("Späť na web", language)}</span>
           </a>
