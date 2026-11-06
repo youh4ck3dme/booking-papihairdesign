@@ -1,26 +1,29 @@
+@import './brand-fonts.css';
+@import './reference-brand.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 40 20% 97%;
-    --foreground: 20 15% 10%;
+    --background: 60 12% 97%;
+    --foreground: 0 0% 6.3%;
 
     --card: 40 15% 99%;
-    --card-foreground: 20 15% 10%;
+    --card-foreground: 0 0% 6.3%;
 
     --popover: 40 15% 99%;
     --popover-foreground: 20 15% 10%;
 
-    --primary: 43 74% 49%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 43 50% 56%;
+    --primary-foreground: 20 15% 10%;
 
     --secondary: 38 18% 92%;
     --secondary-foreground: 20 25% 18%;
 
     --muted: 35 12% 93%;
-    --muted-foreground: 20 8% 40%;
+    --muted-foreground: 20 8% 28%;
 
     --accent: 38 25% 90%;
     --accent-foreground: 20 30% 22%;
@@ -30,20 +33,20 @@
 
     --border: 35 14% 86%;
     --input: 35 14% 86%;
-    --ring: 43 74% 49%;
+    --ring: 43 83% 28%;
 
     --radius: 0.625rem;
 
-    --gold: 43 74% 49%;
+    --gold: 43 50% 56%;
     --gold-foreground: 20 15% 10%;
 
-    --sidebar-background: 20 15% 10%;
-    --sidebar-foreground: 35 10% 88%;
+    --sidebar-background: 40 20% 97%;
+    --sidebar-foreground: 20 15% 10%;
     --sidebar-primary: 43 74% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 25 18% 16%;
-    --sidebar-accent-foreground: 35 10% 88%;
-    --sidebar-border: 25 15% 18%;
+    --sidebar-accent: 38 18% 92%;
+    --sidebar-accent-foreground: 20 15% 10%;
+    --sidebar-border: 35 14% 86%;
     --sidebar-ring: 43 74% 55%;
   }
 
@@ -55,7 +58,7 @@
     --popover: 0 0% 4%;
     --popover-foreground: 0 0% 90%;
     --primary: 43 74% 52%;
-    --primary-foreground: 0 0% 100%;
+    --primary-foreground: 20 15% 10%;
     --secondary: 0 0% 8%;
     --secondary-foreground: 0 0% 75%;
     --muted: 0 0% 6%;
@@ -90,7 +93,7 @@
     -webkit-tap-highlight-color: transparent;
   }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground;
     overflow-x: hidden;
     min-height: 100vh;
     min-height: 100dvh;
@@ -123,3 +126,24 @@
   .min-touch { min-height: 44px; min-width: 44px; }
 }
 
+
+/* Reveal only the newly available offer, never scale the application viewport. */
+.booking-offer { scroll-margin-top: calc(8.5rem + env(safe-area-inset-top, 0px)); animation: booking-offer-reveal 280ms ease-out; }
+@keyframes booking-offer-reveal { from { opacity: 0; transform: translateY(14px) scale(0.985); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .booking-offer { animation: none; } }
+.text-primary { color: var(--papi-gold-ink); }
+
+.language-control { display:inline-flex; gap:4px; padding:3px; margin-block:5px; border:1px solid var(--papi-gold-edge); border-radius:999px; background:var(--papi-paper); flex-shrink:0; box-shadow:0 2px 6px rgb(82 61 22 / 8%); }
+.language-control button { position:relative; min-width:44px; min-height:28px; padding:4px 10px; border:0; border-radius:999px; background:transparent; color:var(--papi-muted); font:600 12px/1.2 var(--font-ui); cursor:pointer; }
+.language-control button::before { content:''; position:absolute; inset:-8px 0; }
+.language-control button[aria-pressed="true"] { background:var(--papi-metal); color:var(--papi-ink); box-shadow:var(--papi-control-shadow); }
+.language-control button:hover { color:var(--papi-ink); }
+.language-control button:focus-visible { outline:2px solid var(--papi-gold-ink); outline-offset:2px; }
+.booking-choice:has(input:focus-visible) { outline:2px solid #82600c; outline-offset:3px; }
+
+/* Body owns safe-area padding once; the booking shell fills the remaining area. */
+.booking-shell { min-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
+@supports (height: 100dvh) { .booking-shell { min-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); } }
+.booking-shell > header { top: env(safe-area-inset-top, 0px); }
+
+.booking-brand-logo { max-width:min(160px, calc(100vw - 2rem - 112px)); }

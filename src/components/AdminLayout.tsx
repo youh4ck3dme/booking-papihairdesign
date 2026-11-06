@@ -52,7 +52,7 @@ export function AdminSidebar() {
       <div className="flex items-center gap-2 px-4 py-4 border-b border-sidebar-border">
         <LogoIcon size="sm" />
         <div className="overflow-hidden">
-          <p className="text-sm font-semibold text-sidebar-foreground truncate">PAPI HAIR DESIGN</p>
+
           <p className="text-xs text-sidebar-foreground/60 capitalize">{role ?? "hosť"}</p>
         </div>
       </div>

@@ -126,7 +126,7 @@ export default function ServicesPage() {
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : services.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
-          <LogoIcon size="md" className="mx-auto mb-3 opacity-30" />
+          <LogoIcon size="md" className="mx-auto mb-3" />
           <p>Žiadne služby</p>
           <Button variant="outline" className="mt-4" onClick={openCreate}>Pridať prvú službu</Button>
         </div>

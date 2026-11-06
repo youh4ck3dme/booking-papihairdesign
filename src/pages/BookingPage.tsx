@@ -1,13 +1,15 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { LogoIcon } from "@/components/LogoIcon";
+import { useBookingLanguage } from "@/lib/booking-language";
+import { revealBookingOffer as revealOffer } from "@/lib/reveal-booking-offer";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { generateSlots, getEffectiveIntervals, type BusinessHours, type EmployeeSchedule, type ExistingAppointment, type BusinessHourEntry, type DateOverrideEntry } from "@/lib/availability";
 import { toast } from "sonner";
 import { format, addDays, startOfDay, isSameDay, isAfter, isBefore, getDaysInMonth, getDay, startOfMonth } from "date-fns";
-import { sk } from "date-fns/locale";
+import { sk, enGB } from "date-fns/locale";
 import { z } from "zod";
-import { useTheme } from "next-themes";
-import { User, Mail, Phone, PenLine, ChevronLeft, ChevronRight, Star, Check, Moon, Sun, Loader2 } from "lucide-react";
+import { User, Mail, Phone, PenLine, ChevronLeft, ChevronRight, Star, Check, Loader2 } from "lucide-react";
 import miskaImg from "@/assets/employee-miska.jpeg";
 import matoImg from "@/assets/employee-mato.jpg";
 
@@ -62,8 +64,11 @@ interface BookingResult {
 }
 
 export default function BookingPage() {
-  const { theme, setTheme } = useTheme();
-  const isDark = theme === "dark";
+  const { language, setLanguage, t } = useBookingLanguage();
+  const dateLocale = language === "en" ? enGB : sk;
+
+  const servicesOffer = useRef<HTMLDivElement>(null);
+  const workersOffer = useRef<HTMLDivElement>(null);
 
   // Data states
   const [services, setServices] = useState<ServiceRow[]>([]);
@@ -83,6 +88,12 @@ export default function BookingPage() {
   const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  useEffect(() => {
+    if (subcategory && !selectedServiceId) revealOffer(servicesOffer.current);
+  }, [subcategory, selectedServiceId]);
+  useEffect(() => {
+    if (selectedServiceId) revealOffer(workersOffer.current);
+  }, [selectedServiceId]);
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   const [formData, setFormData] = useState({
     meno: "", priezvisko: "", email: "", phone: "", note: "",
@@ -295,7 +306,7 @@ export default function BookingPage() {
       return;
     }
     if (!formData.terms) {
-      toast.error("Musíte súhlasiť s obchodnými podmienkami");
+      toast.error(t("Musíte súhlasiť s obchodnými podmienkami"));
       return;
     }
     setContactErrors({});
@@ -304,7 +315,7 @@ export default function BookingPage() {
     // Find the actual slot Date
     const slotDate = availableSlots.find((s) => format(s, "HH:mm") === selectedTime);
     if (!slotDate) {
-      toast.error("Vybraný čas už nie je dostupný");
+      toast.error(t("Vybraný čas už nie je dostupný"));
       setSubmitting(false);
       return;
     }
@@ -323,16 +334,16 @@ export default function BookingPage() {
       });
 
       if (error || data?.error) {
-        toast.error(data?.error ?? "Chyba pri vytváraní rezervácie");
+        toast.error(t(data?.error ?? "Chyba pri vytváraní rezervácie"));
         setSubmitting(false);
         return;
       }
 
       setBookingResult(data);
       setBookingDone(true);
-      toast.success("Rezervácia úspešne vytvorená!");
+      toast.success(t("Rezervácia úspešne vytvorená!"));
     } catch {
-      toast.error("Chyba pri komunikácii so serverom");
+      toast.error(t("Chyba pri komunikácii so serverom"));
     }
     setSubmitting(false);
   };
@@ -342,13 +353,13 @@ export default function BookingPage() {
     <span className={`text-primary ${className}`}>{children}</span>
   );
 
-  const StepHeader = ({ num, title, extra }: { num: string; title: string; extra?: React.ReactNode }) => (
+  const StepHeader = ({ num, title, extra, onReveal }: { num: string; title: string; extra?: React.ReactNode; onReveal?: () => void }) => (
     <div className="flex items-center justify-between mt-8 mb-4">
       <div className="flex items-center gap-4">
         <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-primary text-primary-foreground dark:text-background">
           {num}
         </div>
-        <h2 className="text-xl font-medium tracking-wide text-foreground">{title}</h2>
+        <h2 className="text-xl font-medium tracking-wide text-foreground">{onReveal ? <button type="button" onClick={onReveal} className="text-left rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring">{t(title)}</button> : t(title)}</h2>
       </div>
       {extra && <div>{extra}</div>}
     </div>
@@ -374,24 +385,22 @@ export default function BookingPage() {
       <div className="min-h-screen bg-background">
         <header className="sticky top-0 z-50 px-4 py-3 flex items-center justify-between bg-background/90 border-b border-border backdrop-blur-sm">
           <div className="flex flex-col">
-            <span className="text-lg font-bold tracking-widest uppercase font-serif text-foreground">
-              PAPI <GoldText>HAIR</GoldText> DESIGN
-            </span>
+            <LogoIcon size="md" className="booking-brand-logo" />
           </div>
         </header>
         <div className="max-w-md mx-auto px-4 py-12 text-center space-y-6">
           <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
             <Check className="w-8 h-8 text-primary" />
           </div>
-          <h2 className="text-xl font-bold text-foreground">Rezervácia potvrdená!</h2>
+          <h2 className="text-xl font-bold text-foreground">{t("Rezervácia potvrdená!")}</h2>
           <p className="text-muted-foreground text-sm">
-            Vaša rezervácia bola úspešne vytvorená. Potvrdenie vám príde na email.
+            {t("Vaša rezervácia bola úspešne vytvorená. Potvrdenie vám príde na email.")}
           </p>
           <div className="rounded-2xl border border-border bg-card p-4 text-left space-y-2 text-sm">
-            <p><strong className="text-foreground">Služba:</strong> <span className="text-muted-foreground">{selectedService?.name_sk}</span></p>
-            <p><strong className="text-foreground">Zamestnanec:</strong> <span className="text-muted-foreground">{selectedEmployee?.display_name}</span></p>
-            <p><strong className="text-foreground">Dátum:</strong> <span className="text-muted-foreground">{selectedFullDate && format(selectedFullDate, "d. MMMM yyyy", { locale: sk })}</span></p>
-            <p><strong className="text-foreground">Čas:</strong> <span className="text-muted-foreground">{selectedTime}</span></p>
+            <p><strong className="text-foreground">{t("Služba:")}</strong> <span className="text-muted-foreground">{selectedService ? t(selectedService.name_sk) : ""}</span></p>
+            <p><strong className="text-foreground">{t("Zamestnanec:")}</strong> <span className="text-muted-foreground">{selectedEmployee?.display_name}</span></p>
+            <p><strong className="text-foreground">{t("Dátum:")}</strong> <span className="text-muted-foreground">{selectedFullDate && format(selectedFullDate, "d. MMMM yyyy", { locale: dateLocale })}</span></p>
+            <p><strong className="text-foreground">{t("Čas:")}</strong> <span className="text-muted-foreground">{selectedTime}</span></p>
           </div>
           <button
             onClick={() => {
@@ -400,13 +409,13 @@ export default function BookingPage() {
             }}
             className="w-full font-bold py-4 rounded-full text-lg bg-primary text-primary-foreground dark:text-background hover:bg-primary/90 transition-all"
           >
-            Dokonči registráciu
+            {t("Dokonči registráciu")}
           </button>
           <button
             onClick={() => window.location.reload()}
             className="text-sm text-primary hover:underline"
           >
-            Nová rezervácia
+            {t("Nová rezervácia")}
           </button>
         </div>
       </div>
@@ -414,33 +423,24 @@ export default function BookingPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] font-sans pb-24 max-w-md w-full mx-auto shadow-2xl relative overflow-x-hidden transition-colors duration-300 bg-background text-foreground safe-x">
+    <div className="booking-shell font-sans pb-24 max-w-md w-full mx-auto relative overflow-x-hidden transition-colors duration-300 bg-background text-foreground">
       {/* Header */}
-      <header className="sticky top-0 z-50 px-4 py-3 safe-x flex items-center justify-between bg-background/90 border-b border-border backdrop-blur-sm pt-[max(0.75rem,env(safe-area-inset-top))]">
+      <header className="sticky top-0 z-50 px-4 py-3 flex items-center justify-between bg-background/90 border-b border-border backdrop-blur-sm">
         <div className="flex flex-col">
-          <span className="text-lg font-bold tracking-widest uppercase font-serif">
-            PAPI <GoldText>HAIR</GoldText> DESIGN
-          </span>
+          <LogoIcon size="md" className="booking-brand-logo" />
           <span className="text-xs text-muted-foreground">papihairdesign.sk</span>
         </div>
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => setTheme(isDark ? "light" : "dark")}
-            className="p-2 rounded-full hover:bg-accent transition-colors"
-          >
-            {isDark ? <Sun size={20} className="text-primary" /> : <Moon size={20} className="text-foreground" />}
-          </button>
-          <div className="w-6 h-6 rounded-full overflow-hidden border border-border">
-            <div className="w-full h-1/3 bg-white" />
-            <div className="w-full h-1/3 bg-blue-600" />
-            <div className="w-full h-1/3 bg-red-600" />
+
+          <div className="language-control" role="group" aria-label="Výber jazyka / Language selection">
+            {(['sk', 'en'] as const).map(code => <button key={code} type="button" lang={code} aria-label={code === 'sk' ? 'Prepnúť do slovenčiny' : 'Switch to English'} aria-pressed={language === code} onClick={() => setLanguage(code)}>{code.toUpperCase()}</button>)}
           </div>
         </div>
       </header>
 
       <div className="px-4">
         {/* Step 1: Kategória */}
-        <StepHeader num="1" title="Vyberte kategóriu" extra={
+        <StepHeader num="1" title={t("Vyberte kategóriu")} extra={
           <div className="flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium border border-primary text-primary">
             4.9 <Star size={14} className="fill-primary" />
           </div>
@@ -456,7 +456,7 @@ export default function BookingPage() {
                 : "bg-card text-muted-foreground border border-border"
                 }`}
             >
-              {cat === "damske" ? "Dámske Služby" : "Pánske Služby"}
+              {cat === "damske" ? t("Dámske Služby") : t("Pánske Služby")}
             </button>
           ))}
         </div>
@@ -464,43 +464,45 @@ export default function BookingPage() {
         <div className="mt-6 flex flex-col gap-3">
           {subcategories.map((sub) => (
             <button
-              key={sub}
-              onClick={() => { setSubcategory(sub); setSelectedServiceId(null); }}
+              key={t(sub)}
+              onClick={() => { setSubcategory(sub); setSelectedServiceId(null); setSelectedWorkerId(null); setSelectedDate(null); setSelectedTime(null); }}
               className={`w-full py-3.5 rounded-full border transition-all duration-200 text-sm font-medium uppercase tracking-wider ${subcategory === sub
                 ? "border-primary bg-card text-primary"
                 : "border-border text-muted-foreground bg-card hover:border-muted-foreground/50"
                 }`}
             >
-              {sub}
+              {t(sub)}
             </button>
           ))}
         </div>
 
         {/* Step 2: Služba */}
         {subcategory && filteredServices.length > 0 && (
-          <div className="animate-fade-in">
-            <StepHeader num="2" title="Vyberte službu" />
+          <div key={subcategory} ref={servicesOffer} className="booking-offer" aria-label="Ponuka služieb">
+            <StepHeader num="2" title={t("Vyberte službu")} onReveal={() => revealOffer(servicesOffer.current)} />
             <div className="flex flex-col gap-3">
               {filteredServices.map((srv) => (
-                <div
+                <label
                   key={srv.id}
-                  onClick={() => setSelectedServiceId(srv.id)}
-                  className={`border rounded-[2rem] p-4 flex items-center gap-4 cursor-pointer transition-all duration-200 ${selectedServiceId === srv.id
+                  className={`booking-choice border rounded-[2rem] p-4 flex items-center gap-4 cursor-pointer transition-all duration-200 ${selectedServiceId === srv.id
                     ? "border-primary bg-card"
                     : "border-border bg-card"
                     }`}
                 >
-                  <RadioIcon selected={selectedServiceId === srv.id} />
+                  <input type="radio" name="booking-service" value={srv.id} checked={selectedServiceId === srv.id}
+                    aria-label={t(srv.name_sk)} aria-describedby={`service-details-${srv.id}`} className="sr-only"
+                    onChange={() => { setSelectedServiceId(srv.id); setSelectedWorkerId(null); setSelectedDate(null); setSelectedTime(null); }} />
+                  <span aria-hidden="true"><RadioIcon selected={selectedServiceId === srv.id} /></span>
                   <div className="flex flex-col flex-1">
-                    <span className="font-bold text-sm text-foreground">{srv.name_sk}</span>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="font-bold text-sm text-foreground">{t(srv.name_sk)}</span>
+                    <span id={`service-details-${srv.id}`} className="text-sm text-muted-foreground">
                       {srv.duration_minutes} min
                       {srv.price != null && (
                         <> – <GoldText className="font-medium">{srv.price} €</GoldText></>
                       )}
                     </span>
                   </div>
-                </div>
+                </label>
               ))}
             </div>
           </div>
@@ -508,19 +510,21 @@ export default function BookingPage() {
 
         {/* Step 3: Pracovník */}
         {selectedServiceId && (
-          <div className="animate-fade-in">
-            <StepHeader num="3" title="Vyberte pracovníka" />
+          <div key={selectedServiceId} ref={workersOffer} className="booking-offer" aria-label="Ponuka pracovníkov">
+            <StepHeader num="3" title={t("Vyberte pracovníka")} onReveal={() => revealOffer(workersOffer.current)} />
             <div className="flex flex-col gap-4">
               {filteredEmployees.map((w) => (
-                <div
+                <label
                   key={w.id}
-                  onClick={() => { setSelectedWorkerId(w.id); setSelectedDate(null); setSelectedTime(null); }}
-                  className={`border rounded-[2rem] p-2 flex items-center gap-4 cursor-pointer transition-all duration-200 ${selectedWorkerId === w.id
+                  className={`booking-choice border rounded-[2rem] p-2 flex items-center gap-4 cursor-pointer transition-all duration-200 ${selectedWorkerId === w.id
                     ? "border-primary bg-card"
                     : "border-border bg-card"
                     }`}
                 >
-                  <div className="pl-2"><RadioIcon selected={selectedWorkerId === w.id} /></div>
+                  <input type="radio" name="booking-worker" value={w.id} checked={selectedWorkerId === w.id}
+                    aria-label={w.display_name} className="sr-only"
+                    onChange={() => { setSelectedWorkerId(w.id); setSelectedDate(null); setSelectedTime(null); }} />
+                  <div className="pl-2" aria-hidden="true"><RadioIcon selected={selectedWorkerId === w.id} /></div>
                   <div className="flex w-full h-24 rounded-2xl overflow-hidden border border-primary/30">
                     <div className="w-1/3 h-full relative">
                       <img
@@ -533,7 +537,7 @@ export default function BookingPage() {
                       <span className="font-bold text-lg tracking-wide text-primary">{w.display_name}</span>
                     </div>
                   </div>
-                </div>
+                </label>
               ))}
             </div>
           </div>
@@ -542,11 +546,11 @@ export default function BookingPage() {
         {/* Step 4: Dátum */}
         {selectedWorkerId && (
           <div className="animate-fade-in">
-            <StepHeader num="4" title="Vyberte dátum" />
+            <StepHeader num="4" title={t("Vyberte dátum")} />
             <div className="rounded-xl p-4 border border-border bg-card">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="font-bold text-lg ml-2 text-foreground">
-                  {format(calendarMonth, "LLLL yyyy", { locale: sk })}
+                  {format(calendarMonth, "LLLL yyyy", { locale: dateLocale })}
                 </h3>
                 <div className="flex rounded-full overflow-hidden border border-border">
                   <button
@@ -566,7 +570,7 @@ export default function BookingPage() {
 
               <div className="grid grid-cols-7 gap-y-4 text-center mb-2">
                 {["Po", "Ut", "St", "Št", "Pi", "So", "Ne"].map((d) => (
-                  <div key={d} className="font-medium text-sm text-muted-foreground">{d}</div>
+                  <div key={d} className="font-medium text-sm text-muted-foreground">{t(d)}</div>
                 ))}
 
                 {[...Array(firstDayOffset)].map((_, i) => <div key={`empty-${i}`} className="py-1" />)}
@@ -612,18 +616,18 @@ export default function BookingPage() {
         {/* Step 5: Čas */}
         {selectedDate && (
           <div className="animate-fade-in">
-            <StepHeader num="5" title="Vyberte čas" />
+            <StepHeader num="5" title={t("Vyberte čas")} />
             {loadingSlots ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
             ) : availableSlots.length === 0 ? (
-              <p className="text-center text-muted-foreground py-4">Žiadne dostupné termíny v tento deň</p>
+              <p className="text-center text-muted-foreground py-4">{t("Žiadne dostupné termíny v tento deň")}</p>
             ) : (
               <>
                 {timeGroups.dopoludnia.length > 0 && (
                   <div className="mb-8">
-                    <h4 className="text-sm font-bold uppercase tracking-wider mb-4 text-muted-foreground">Dopoludnia</h4>
+                    <h4 className="text-sm font-bold uppercase tracking-wider mb-4 text-muted-foreground">{t("Dopoludnia")}</h4>
                     <div className="flex flex-wrap gap-x-4 gap-y-3">
                       {timeGroups.dopoludnia.map((t) => (
                         <button
@@ -642,7 +646,7 @@ export default function BookingPage() {
                 )}
                 {timeGroups.popoludni.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-bold uppercase tracking-wider mb-4 text-muted-foreground">Popoludní</h4>
+                    <h4 className="text-sm font-bold uppercase tracking-wider mb-4 text-muted-foreground">{t("Popoludní")}</h4>
                     <div className="flex flex-wrap gap-x-4 gap-y-3">
                       {timeGroups.popoludni.map((t) => (
                         <button
@@ -682,14 +686,14 @@ export default function BookingPage() {
                     </div>
                     <input
                       type={input.type}
-                      placeholder={input.placeholder}
+                      placeholder={t(input.placeholder)}
                       className="flex-1 py-3 px-4 outline-none bg-card text-foreground placeholder:text-muted-foreground"
                       value={formData[input.field]}
                       onChange={(e) => setFormData({ ...formData, [input.field]: e.target.value })}
                     />
                   </div>
                   {contactErrors[input.field] && (
-                    <p className="text-destructive text-xs mt-1 ml-4">{contactErrors[input.field]}</p>
+                    <p className="text-destructive text-xs mt-1 ml-4">{t(contactErrors[input.field])}</p>
                   )}
                 </div>
               ))}
@@ -721,7 +725,7 @@ export default function BookingPage() {
                   <PenLine size={18} />
                 </div>
                 <textarea
-                  placeholder="Poznámka"
+                  placeholder={t("Poznámka")}
                   className="flex-1 py-3 px-4 outline-none resize-none bg-card text-foreground placeholder:text-muted-foreground"
                   value={formData.note}
                   onChange={(e) => setFormData({ ...formData, note: e.target.value })}
@@ -738,7 +742,7 @@ export default function BookingPage() {
                   }`}>
                   {formData.all && <Check size={14} className="text-primary-foreground dark:text-background" />}
                 </div>
-                <span className="font-medium text-foreground">Označiť všetky možnosti</span>
+                <span className="font-medium text-foreground">{t("Označiť všetky možnosti")}</span>
               </label>
 
               <label className="flex items-start gap-3 cursor-pointer group" onClick={() => handleConsentChange("marketing")}>
@@ -749,8 +753,8 @@ export default function BookingPage() {
                   {formData.marketing && <Check size={14} className="text-primary-foreground dark:text-background" />}
                 </div>
                 <div className="leading-snug">
-                  Súhlasím so spracovaním osobných údajov pre <strong className="text-foreground">Papi Hair Design</strong> na marketingové účely{" "}
-                  <span className="text-primary cursor-pointer hover:underline">Podrobnosti tu</span>
+                  {t("Súhlasím so spracovaním osobných údajov pre")} <strong className="text-foreground">Papi Hair Design</strong> {t("na marketingové účely")}{" "}
+                  <span className="text-primary cursor-pointer hover:underline">{t("Podrobnosti tu")}</span>
                 </div>
               </label>
 
@@ -762,20 +766,20 @@ export default function BookingPage() {
                   {formData.terms && <Check size={14} className="text-primary-foreground dark:text-background" />}
                 </div>
                 <div>
-                  Súhlasím so <span className="text-primary cursor-pointer hover:underline">všeobecnými obchodnými podmienkami</span>
+                  {t("Súhlasím so")} <span className="text-primary cursor-pointer hover:underline">{t("všeobecnými obchodnými podmienkami")}</span>
                 </div>
               </label>
 
               <div className="text-right text-primary text-sm mt-2 cursor-pointer hover:underline">
-                Zásady ochrany osobných údajov
+                {t("Zásady ochrany osobných údajov")}
               </div>
             </div>
 
             {/* Summary */}
             {selectedService && selectedFullDate && (
               <div className="text-center text-sm font-medium mb-6 text-foreground">
-                Váš termín: <strong className="text-primary">{selectedService.name_sk}</strong> u <strong className="text-primary">{selectedEmployee?.display_name}</strong>
-                {" "}dňa <strong className="text-primary">{format(selectedFullDate, "d. MMMM", { locale: sk })}</strong> o <strong className="text-primary">{selectedTime}</strong>
+                {t("Váš termín:")} <strong className="text-primary">{t(selectedService.name_sk)}</strong> {t("u")} <strong className="text-primary">{selectedEmployee?.display_name}</strong>
+                {" "}{t("dňa")} <strong className="text-primary">{format(selectedFullDate, "d. MMMM", { locale: dateLocale })}</strong> {t("o")} <strong className="text-primary">{selectedTime}</strong>
               </div>
             )}
 
@@ -784,7 +788,7 @@ export default function BookingPage() {
               disabled={submitting}
               className="w-full font-bold py-4 rounded-full text-lg transition-all transform active:scale-[0.98] bg-primary text-primary-foreground dark:text-background hover:bg-primary/90 shadow-lg shadow-primary/30 disabled:opacity-50"
             >
-              {submitting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "REZERVOVAŤ ONLINE"}
+              {submitting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : t("REZERVOVAŤ ONLINE")}
             </button>
           </div>
         )}

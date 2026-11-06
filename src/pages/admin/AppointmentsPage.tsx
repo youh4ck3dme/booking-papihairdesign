@@ -148,7 +148,7 @@ export default function AppointmentsPage() {
                   </div>
                 )}
                 <div className="flex items-center gap-2">
-                  <LogoIcon size="sm" className="w-4 h-4" />
+                  <LogoIcon size="sm" className="!w-[72px] h-auto" />
                   <span>{selected.services?.name_sk}</span>
                 </div>
                 <div className="flex items-center gap-2">

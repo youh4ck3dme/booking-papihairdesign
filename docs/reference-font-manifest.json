@@ -1,0 +1,34 @@
+[
+  {
+    "family": "Bodoni Moda",
+    "subset": "latin-ext",
+    "source": "https://fonts.gstatic.com/s/bodonimoda/v28/aFTQ7PxzY382XsXX63LUYJSESKjWXFBPgas.woff2",
+    "file": "bodoni-moda-latin-ext.woff2",
+    "bytes": 24952,
+    "sha256": "e00904cd96a4b289e3e56f9f12c59d2f49b33f56baf384336534e61024c088d0"
+  },
+  {
+    "family": "Bodoni Moda",
+    "subset": "latin",
+    "source": "https://fonts.gstatic.com/s/bodonimoda/v28/aFTQ7PxzY382XsXX63LUYJSKSKjWXFBP.woff2",
+    "file": "bodoni-moda-latin.woff2",
+    "bytes": 46248,
+    "sha256": "fe710b15e2acd1f30159cec96b10c3455a32d27104c29d4027c5465d81fc11fe"
+  },
+  {
+    "family": "Inter",
+    "subset": "latin-ext",
+    "source": "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa25L7W0Q5n-wU.woff2",
+    "file": "inter-latin-ext.woff2",
+    "bytes": 85272,
+    "sha256": "a28eb6d3ccb534ae0c94ca999371df024aab60b08c3c8a5720ee9e32fa0faaa2"
+  },
+  {
+    "family": "Inter",
+    "subset": "latin",
+    "source": "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw.woff2",
+    "file": "inter-latin.woff2",
+    "bytes": 48432,
+    "sha256": "c940764593d0fe5d596be327ca7558855e018039fb78509aa21921fd3644c3e4"
+  }
+]

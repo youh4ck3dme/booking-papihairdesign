@@ -34,7 +34,9 @@ export default {
         touch: "44px",
       },
       fontFamily: {
-        sans: ["-apple-system", "BlinkMacSystemFont", '"SF Pro Display"', '"SF Pro Text"', '"Helvetica Neue"', "Arial", "sans-serif"],
+        sans: ["Inter", "Arial", "sans-serif"],
+        serif: ["Bodoni Moda", "Didot", "serif"],
+        heading: ["Bodoni Moda", "Didot", "serif"],
       },
       colors: {
         border: "hsl(var(--border))",

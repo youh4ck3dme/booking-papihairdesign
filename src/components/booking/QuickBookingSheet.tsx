@@ -123,7 +123,7 @@ export default function QuickBookingSheet({
                           : "border-white/10 bg-white/5 hover:bg-white/8"
                       }`}
                     >
-                      <LogoIcon size="sm" className="w-4 h-4 shrink-0" />
+                      <LogoIcon size="sm" className="!w-[72px] h-auto shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-white truncate">{s.name_sk}</p>
                         <div className="flex items-center gap-2 mt-0.5">
