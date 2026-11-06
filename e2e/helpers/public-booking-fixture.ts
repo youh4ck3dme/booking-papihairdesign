@@ -36,7 +36,7 @@ export async function installPublicBookingFixture(context: BrowserContext, busyI
     }
     if (options.simulateCreate === true && request.method() === 'POST' && url.pathname === '/rest/v1/rpc/create_public_booking') {
       const body = request.postDataJSON() as Record<string, unknown>;
-      const expected = { business_id: PUBLIC_BUSINESS, service_id: 'service-1', employee_id: EMPLOYEE_A, start_at: '2026-11-07T09:45:00.000Z', customer_name: 'Test Fixture', customer_email: 'fixture@example.invalid' };
+      const expected = { business_id: PUBLIC_BUSINESS, service_id: 'service-1', employee_id: EMPLOYEE_A, start_at: '2026-11-07T10:00:00.000Z', customer_name: 'Test Fixture', customer_email: 'fixture@example.invalid' };
       if (Object.keys(body).length !== Object.keys(expected).length || !Object.entries(expected).every(([key, value]) => body[key] === value)) {
         state.blocked.push('INVALID simulated create payload'); return route.fulfill({ status: 400, body: '{}' });
       }
