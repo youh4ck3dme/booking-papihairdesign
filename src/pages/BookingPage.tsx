@@ -383,7 +383,7 @@ export default function BookingPage() {
   if (bookingDone && bookingResult) {
     return (
       <div className="min-h-screen bg-background">
-        <header className="sticky top-0 z-50 px-4 py-3 flex items-center justify-between bg-background/90 border-b border-border backdrop-blur-sm">
+        <header className="papi-surface sticky top-0 z-50 px-4 py-3 flex items-center justify-between bg-background/90 border-b border-border backdrop-blur-sm">
           <div className="flex flex-col">
             <LogoIcon size="md" className="booking-brand-logo" />
           </div>
@@ -407,7 +407,7 @@ export default function BookingPage() {
               sessionStorage.setItem("claim_token", bookingResult.claim_token);
               window.location.href = `/auth?mode=register&email=${encodeURIComponent(bookingResult.customer_email)}&name=${encodeURIComponent(bookingResult.customer_name)}`;
             }}
-            className="w-full font-bold py-4 rounded-full text-lg bg-primary text-primary-foreground dark:text-background hover:bg-primary/90 transition-all"
+            className="papi-control w-full font-bold py-4 rounded-full text-lg bg-primary text-primary-foreground dark:text-background hover:bg-primary/90 transition-colors"
           >
             {t("Dokonči registráciu")}
           </button>
@@ -425,7 +425,7 @@ export default function BookingPage() {
   return (
     <div className="booking-shell font-sans pb-24 max-w-md w-full mx-auto relative overflow-x-hidden transition-colors duration-300 bg-background text-foreground">
       {/* Header */}
-      <header className="sticky top-0 z-50 px-4 py-3 flex items-center justify-between bg-background/90 border-b border-border backdrop-blur-sm">
+      <header className="papi-surface sticky top-0 z-50 px-4 py-3 flex items-center justify-between bg-background/90 border-b border-border backdrop-blur-sm">
         <div className="flex flex-col">
           <LogoIcon size="md" className="booking-brand-logo" />
           <span className="text-xs text-muted-foreground">papihairdesign.sk</span>
@@ -451,7 +451,8 @@ export default function BookingPage() {
             <button
               key={cat}
               onClick={() => { setCategory(cat); setSubcategory(null); setSelectedServiceId(null); setSelectedWorkerId(null); setSelectedDate(null); setSelectedTime(null); }}
-              className={`w-full py-3.5 rounded-full font-medium text-lg transition-all ${category === cat
+              aria-pressed={category === cat}
+              className={`papi-control w-full py-3.5 rounded-full font-medium text-lg transition-colors ${category === cat
                 ? "bg-primary text-primary-foreground dark:text-background shadow-lg shadow-primary/20"
                 : "bg-card text-muted-foreground border border-border"
                 }`}
@@ -466,7 +467,8 @@ export default function BookingPage() {
             <button
               key={t(sub)}
               onClick={() => { setSubcategory(sub); setSelectedServiceId(null); setSelectedWorkerId(null); setSelectedDate(null); setSelectedTime(null); }}
-              className={`w-full py-3.5 rounded-full border transition-all duration-200 text-sm font-medium uppercase tracking-wider ${subcategory === sub
+              aria-pressed={subcategory === sub}
+              className={`papi-control w-full py-3.5 rounded-full border transition-colors duration-200 text-sm font-medium uppercase tracking-wider ${subcategory === sub
                 ? "border-primary bg-card text-primary"
                 : "border-border text-muted-foreground bg-card hover:border-muted-foreground/50"
                 }`}
@@ -484,7 +486,7 @@ export default function BookingPage() {
               {filteredServices.map((srv) => (
                 <label
                   key={srv.id}
-                  className={`booking-choice border rounded-[2rem] p-4 flex items-center gap-4 cursor-pointer transition-all duration-200 ${selectedServiceId === srv.id
+                  className={`booking-choice border rounded-[2rem] p-4 flex items-center gap-4 cursor-pointer transition-colors duration-200 ${selectedServiceId === srv.id
                     ? "border-primary bg-card"
                     : "border-border bg-card"
                     }`}
@@ -516,7 +518,7 @@ export default function BookingPage() {
               {filteredEmployees.map((w) => (
                 <label
                   key={w.id}
-                  className={`booking-choice border rounded-[2rem] p-2 flex items-center gap-4 cursor-pointer transition-all duration-200 ${selectedWorkerId === w.id
+                  className={`booking-choice border rounded-[2rem] p-2 flex items-center gap-4 cursor-pointer transition-colors duration-200 ${selectedWorkerId === w.id
                     ? "border-primary bg-card"
                     : "border-border bg-card"
                     }`}
@@ -547,19 +549,21 @@ export default function BookingPage() {
         {selectedWorkerId && (
           <div className="animate-fade-in">
             <StepHeader num="4" title={t("Vyberte dátum")} />
-            <div className="rounded-xl p-4 border border-border bg-card">
+            <div className="booking-calendar rounded-xl p-4 border border-border bg-card">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="font-bold text-lg ml-2 text-foreground">
                   {format(calendarMonth, "LLLL yyyy", { locale: dateLocale })}
                 </h3>
                 <div className="flex rounded-full overflow-hidden border border-border">
                   <button
+                    aria-label={language === "sk" ? "Predchádzajúci mesiac" : "Previous month"}
                     onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))}
                     className="p-2 px-4 bg-card text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <ChevronLeft size={20} />
                   </button>
                   <button
+                    aria-label={language === "sk" ? "Nasledujúci mesiac" : "Next month"}
                     onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))}
                     className="p-2 px-4 bg-primary text-primary-foreground dark:text-background hover:bg-primary/80 transition-colors"
                   >
@@ -590,7 +594,8 @@ export default function BookingPage() {
                       <button
                         onClick={() => { if (!disabled) { setSelectedDate(day); setSelectedTime(null); } }}
                         disabled={disabled}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all ${isSelected
+                        aria-pressed={isSelected}
+                        className={`booking-day w-11 h-11 rounded-full flex items-center justify-center text-sm transition-colors ${isSelected
                           ? "bg-primary text-primary-foreground dark:text-background font-bold shadow-md"
                           : isToday
                             ? "border border-muted-foreground/40 text-foreground"
@@ -633,7 +638,7 @@ export default function BookingPage() {
                         <button
                           key={t}
                           onClick={() => setSelectedTime(t)}
-                          className={`text-base px-4 py-2 rounded-full transition-all font-medium border ${selectedTime === t
+                          className={`text-base px-4 py-2 rounded-full transition-colors font-medium border ${selectedTime === t
                             ? "bg-primary text-primary-foreground dark:text-background border-primary"
                             : "bg-card text-foreground border-border hover:border-primary/50"
                             }`}
@@ -652,7 +657,7 @@ export default function BookingPage() {
                         <button
                           key={t}
                           onClick={() => setSelectedTime(t)}
-                          className={`text-base px-4 py-2 rounded-full transition-all font-medium border ${selectedTime === t
+                          className={`text-base px-4 py-2 rounded-full transition-colors font-medium border ${selectedTime === t
                             ? "bg-primary text-primary-foreground dark:text-background border-primary"
                             : "bg-card text-foreground border-border hover:border-primary/50"
                             }`}
@@ -786,7 +791,7 @@ export default function BookingPage() {
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="w-full font-bold py-4 rounded-full text-lg transition-all transform active:scale-[0.98] bg-primary text-primary-foreground dark:text-background hover:bg-primary/90 shadow-lg shadow-primary/30 disabled:opacity-50"
+              className="papi-control w-full font-bold py-4 rounded-full text-lg transition-colors bg-primary text-primary-foreground dark:text-background hover:bg-primary/90 shadow-lg shadow-primary/30 disabled:opacity-50"
             >
               {submitting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : t("REZERVOVAŤ ONLINE")}
             </button>

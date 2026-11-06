@@ -1,0 +1,68 @@
+/* Shared verbatim by Angular and booking. Depth has a role; motion always settles. */
+:root {
+  --papi-shadow-soft: 0 2px 8px rgb(32 24 10 / 4.5%);
+  --papi-shadow-card: 0 8px 24px rgb(32 24 10 / 7.5%);
+  --papi-shadow-floating: 0 18px 48px rgb(32 24 10 / 12%);
+  --papi-motion-fast: 140ms;
+  --papi-motion-normal: 220ms;
+  --papi-motion-reveal: 320ms;
+  --papi-ease: cubic-bezier(.2, .7, .2, 1);
+}
+
+body :is(button, .home-button, [role='button'], summary) {
+  transition-property: color, background-color, border-color, opacity, transform;
+  transition-duration: var(--papi-motion-fast);
+  transition-timing-function: var(--papi-ease);
+}
+body :is(button, .home-button) { min-height: 44px; min-width: 44px; }
+body :is(button, a[href], summary, input, textarea, select, [tabindex='0']):focus-visible {
+  outline: 2px solid var(--papi-gold-ink);
+  outline-offset: 3px;
+}
+body :is(input, textarea, select) {
+  transition: border-color var(--papi-motion-fast) var(--papi-ease), background-color var(--papi-motion-fast) var(--papi-ease);
+}
+body :is(button:disabled, [aria-disabled='true'], [aria-busy='true']) {
+  animation: none;
+  transition: none;
+  cursor: not-allowed;
+}
+.papi-control, .home-button { transform: none; }
+body :is(.papi-control, .home-button):active:not(:disabled):not([aria-disabled='true']) { opacity: .88; }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  :is(.papi-control, .home-button):hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+    animation: papi-nudge var(--papi-motion-normal) var(--papi-ease);
+  }
+}
+@keyframes papi-nudge { 0%, 100% { transform: none; } 50% { transform: translateY(-1px); } }
+@keyframes papi-reveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes papi-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes papi-dismiss { from { opacity: 1; } to { opacity: 0; } }
+
+.papi-surface, .booking-calendar { box-shadow: var(--papi-shadow-card); }
+body :is(.papi-dialog, .papi-popup, .discover-links, #mobile-menu) { box-shadow: var(--papi-shadow-floating); }
+body .site-header { box-shadow: var(--papi-shadow-soft); }
+.papi-dialog { animation: papi-reveal var(--papi-motion-reveal) var(--papi-ease); }
+.papi-backdrop { animation: papi-fade var(--papi-motion-normal) var(--papi-ease); }
+.papi-popup[data-state='open'] { animation: papi-fade var(--papi-motion-normal) var(--papi-ease); }
+.papi-dialog[data-state='closed'], .papi-backdrop[data-state='closed'], .papi-popup[data-state='closed'] {
+  animation: papi-dismiss var(--papi-motion-fast) var(--papi-ease);
+}
+.booking-choice { box-shadow: var(--papi-shadow-soft); transition: border-color var(--papi-motion-fast) var(--papi-ease), background-color var(--papi-motion-fast) var(--papi-ease); }
+.booking-choice:has(input:checked) { border-color: var(--papi-gold-edge); background-color: var(--papi-gold-soft); }
+.booking-choice:has(input:focus-visible) { outline: 2px solid var(--papi-gold-ink); outline-offset: 3px; }
+
+.language-control { display: inline-flex; gap: 4px; padding: 3px; margin-block: 5px; border: 1px solid var(--papi-gold-edge); border-radius: 999px; background: var(--papi-paper); flex-shrink: 0; box-shadow: var(--papi-shadow-soft); }
+body .language-control button { position: relative; min-width: 44px; min-height: 28px; padding: 4px 10px; border: 0; border-radius: 999px; background: transparent; color: var(--papi-muted); font: 600 12px/1.2 var(--font-ui); cursor: pointer; }
+.language-control button::before { content: ''; position: absolute; inset: -8px 0; }
+body .language-control button[aria-pressed='true'] { background: var(--papi-metal); color: var(--papi-ink); box-shadow: var(--papi-control-shadow); }
+body .language-control button:hover { color: var(--papi-ink); }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

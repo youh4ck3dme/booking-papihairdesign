@@ -54,6 +54,7 @@ for (const [width, height] of [[320,568],[390,844],[844,390],[768,1024],[1440,90
     await serviceChoice.focus();
     await page.keyboard.press('Space');
     await expect(serviceChoice).toBeChecked();
+    await expect(serviceChoice.locator('..')).toHaveCSS('background-color', 'rgb(245, 237, 218)');
     const workers = page.getByRole('button', { name: 'Choose a stylist', exact: true });
     await expect(workers).toBeInViewport();
     await page.getByRole('button', { name: 'Prepnúť do slovenčiny', exact: true }).click();
@@ -64,6 +65,12 @@ for (const [width, height] of [[320,568],[390,844],[844,390],[768,1024],[1440,90
     await page.keyboard.press('Space');
     await expect(workerChoice).toBeChecked();
     await expect(page.getByRole('heading', { name: 'Vyberte dátum', exact: true })).toBeVisible();
+    for (const day of await page.locator('.booking-day').all()) {
+      const box = (await day.boundingBox())!;
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+    }
+    await expect(page.getByRole('button', { name: 'Predchádzajúci mesiac', exact: true })).toBeVisible();
     for (const offer of await page.locator('.booking-offer').all()) {
       await expect(offer).toHaveCSS('transform', 'none');
     }

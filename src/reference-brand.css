@@ -45,7 +45,7 @@ html h6 { font-size: 0.9375rem; }
 }
 :is(button, a)[class~="bg-gold"]:hover, :is(button, a)[class~="bg-primary"]:hover, .home-button--primary:hover {
   background: var(--papi-metal);
-  filter: brightness(1.035);
+  border-color: var(--papi-gold-ink);
 }
 :is(button, a)[class~="bg-gold"]:disabled, :is(button, a)[class~="bg-primary"]:disabled { filter: none; }
 ::selection { background: var(--papi-gold-soft); color: var(--papi-ink); }
