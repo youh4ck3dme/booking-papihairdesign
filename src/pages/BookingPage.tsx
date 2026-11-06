@@ -1,4 +1,4 @@
-import { LogoIcon } from "@/components/LogoIcon";
+import BookingHeader from "@/components/BookingHeader";
 import { useBookingLanguage } from "@/lib/booking-language";
 import { revealBookingOffer as revealOffer } from "@/lib/reveal-booking-offer";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
@@ -385,8 +385,9 @@ export default function BookingPage() {
 
   if (initialLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="booking-shell bg-background">
+        <BookingHeader language={language} onLanguageChange={setLanguage} />
+        <div className="min-h-[50vh] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
       </div>
     );
   }
@@ -394,11 +395,7 @@ export default function BookingPage() {
   if (bookingDone && bookingResult) {
     return (
       <div className="min-h-screen bg-background">
-        <header className="papi-surface sticky top-0 z-50 px-4 py-3 flex items-center justify-between bg-background/90 border-b border-border backdrop-blur-sm">
-          <div className="flex flex-col">
-            <LogoIcon size="md" className="booking-brand-logo" />
-          </div>
-        </header>
+        <BookingHeader language={language} onLanguageChange={setLanguage} />
         <div className="max-w-md mx-auto px-4 py-12 text-center space-y-6">
           <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
             <Check className="w-8 h-8 text-primary" />
@@ -434,22 +431,11 @@ export default function BookingPage() {
   }
 
   return (
-    <div className="booking-shell font-sans pb-24 max-w-md w-full mx-auto relative overflow-x-hidden transition-colors duration-300 bg-background text-foreground">
+    <div className="booking-shell font-sans pb-24 w-full relative overflow-x-hidden transition-colors duration-300 bg-background text-foreground">
       {/* Header */}
-      <header className="papi-surface sticky top-0 z-50 px-4 py-3 flex items-center justify-between bg-background/90 border-b border-border backdrop-blur-sm">
-        <div className="flex flex-col">
-          <LogoIcon size="md" className="booking-brand-logo" />
-          <span className="text-xs text-muted-foreground">papihairdesign.sk</span>
-        </div>
-        <div className="flex items-center gap-4">
+      <BookingHeader language={language} onLanguageChange={setLanguage} />
 
-          <div className="language-control" role="group" aria-label="Výber jazyka / Language selection">
-            {(['sk', 'en'] as const).map(code => <button key={code} type="button" lang={code} aria-label={code === 'sk' ? 'Prepnúť do slovenčiny' : 'Switch to English'} aria-pressed={language === code} onClick={() => setLanguage(code)}>{code.toUpperCase()}</button>)}
-          </div>
-        </div>
-      </header>
-
-      <div className="px-4">
+      <div className="px-4 max-w-md mx-auto">
         {/* Step 1: Kategória */}
         <StepHeader num="1" title={t("Vyberte kategóriu")} extra={
           <div className="flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium border border-primary text-primary">

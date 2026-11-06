@@ -45,6 +45,7 @@ export const bookingEnglish: Record<string, string> = {
   "So": "Sat",
   "Ne": "Sun",
   "Späť": "Back",
+  "Späť na web": "Back to website",
   "Nová rezervácia": "New booking",
   "Rezervácia potvrdená": "Booking confirmed",
   "Žiadne voľné termíny": "No available times",

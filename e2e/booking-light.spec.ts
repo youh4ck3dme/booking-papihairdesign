@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { installPublicBookingFixture } from './helpers/public-booking-fixture';
 
 test.use({ locale: 'sk-SK', serviceWorkers: 'block' });
 for (const [width, height] of [[240,640],[320,568],[390,844],[844,390],[768,1024],[1440,900]]) {
@@ -43,7 +44,9 @@ for (const [width, height] of [[240,640],[320,568],[390,844],[844,390],[768,1024
       }
       return route.abort();
     });
-    await page.goto('/booking?lang=sk');
+    await page.goto('/?lang=sk#services');
+    await expect(page).toHaveURL(/\/booking\?lang=sk#services$/);
+    await page.reload();
     await expect(page.getByRole('heading', { name: 'Vyberte kategóriu' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Vyberte kategóriu' })).toHaveCSS('font-family', /Bodoni Moda/);
     const headingFonts = await page.evaluate(() => document.fonts.load('500 24px "Bodoni Moda"', 'PAPI ĽŠŤŽÁÉÍÓÚÝČĎŇÔÄŔĹ').then(fonts => fonts.map(font => font.status)));
@@ -58,6 +61,19 @@ for (const [width, height] of [[240,640],[320,568],[390,844],[844,390],[768,1024
     else expect(logoBox.width).toBeGreaterThanOrEqual(96);
     expect(Math.abs(logoBox.width / logoBox.height - 359 / 142)).toBeLessThan(0.01);
     await expect(page.locator('html')).not.toHaveClass(/dark/);
+    const dashboard = page.getByRole('link', { name: 'Dashboard', exact: true });
+    const website = page.getByRole('link', { name: 'Späť na web', exact: true });
+    await expect(dashboard).toHaveAttribute('href', '/admin');
+    await expect(website).toHaveAttribute('href', 'https://papihairdesign.sk/');
+    expect(await website.getAttribute('target')).toBeNull();
+    for (const link of [dashboard, website]) {
+      const box = (await link.boundingBox())!;
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      await expect(link).toBeInViewport({ ratio: 1 });
+    }
+    expect(Math.abs((await dashboard.boundingBox())!.height - (await website.boundingBox())!.height)).toBeLessThan(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const english = page.getByRole('button', { name: 'Switch to English', exact: true });
     expect(Math.round((await page.locator('.language-control').boundingBox())!.height)).toBe(36);
     expect(Math.round((await english.boundingBox())!.height)).toBe(28);
@@ -68,6 +84,10 @@ for (const [width, height] of [[240,640],[320,568],[390,844],[844,390],[768,1024
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expect(page.getByRole('heading', { name: 'Choose a category' })).toBeVisible();
     await page.getByRole('button', { name: 'Reject', exact: true }).click();
+    await expect(page.getByRole('link', { name: 'Back to website', exact: true })).toBeVisible();
+    if ([320, 390, 768, 1440].includes(width)) {
+      await page.screenshot({ path: test.info().outputPath(`booking-header-${width}.png`), fullPage: true });
+    }
     await page.getByRole('button', { name: 'HAIRCUT', exact: true }).click();
     const services = page.getByRole('button', { name: 'Choose a service', exact: true });
     await expect(services).toBeInViewport();
@@ -117,3 +137,17 @@ for (const [width, height] of [[240,640],[320,568],[390,844],[844,390],[768,1024
     expect(privateReads).toEqual([]);
   });
 }
+
+
+test('dashboard header link keeps the existing signed-out access guard', async ({ page, context }) => {
+  const fixture = await installPublicBookingFixture(context);
+  await page.goto('/booking?lang=sk');
+  const dashboard = page.getByRole('link', { name: 'Dashboard', exact: true });
+  await dashboard.focus();
+  await expect(dashboard).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/auth$/);
+  await expect(page.getByRole('heading', { name: 'Prihlásenie', exact: true })).toBeVisible();
+  expect(fixture.writes).toEqual([]);
+  expect(fixture.blocked).toEqual([]);
+});

@@ -1,0 +1,52 @@
+.booking-header {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 50;
+  padding: 12px 16px;
+  background: var(--papi-paper);
+  border-bottom: 1px solid var(--papi-line);
+}
+.booking-header__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px 8px;
+  max-width: 960px;
+  margin-inline: auto;
+}
+.booking-header__brand { min-width: 0; }
+.booking-header__brand span { display: block; color: var(--papi-muted); font-size: 12px; overflow-wrap: anywhere; }
+.booking-header__nav { grid-column: 1 / -1; grid-row: 2; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; min-width: 0; }
+.booking-header__link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--papi-gold);
+  border-radius: 12px;
+  color: var(--papi-ink);
+  font: 600 max(14px, 1rem)/1.35 var(--font-ui);
+  text-decoration: none;
+  box-shadow: var(--papi-shadow-soft);
+  transition: background-color var(--papi-motion-fast) var(--papi-ease), border-color var(--papi-motion-fast) var(--papi-ease), box-shadow var(--papi-motion-fast) var(--papi-ease);
+}
+.booking-header__link span { overflow-wrap: anywhere; min-width: 0; }
+.booking-header__link svg { flex-shrink: 0; }
+.booking-header__link--dashboard { background: var(--papi-gold-soft); }
+.booking-header__link--website { background: #fff; }
+.booking-header__link:focus-visible { outline: 2px solid var(--papi-gold-ink); outline-offset: 3px; }
+.booking-header__link:active { background: var(--papi-gold-soft); box-shadow: inset 0 1px 3px rgb(32 24 10 / 12%); }
+.booking-shell .booking-offer { scroll-margin-top: calc(var(--booking-header-height, 160px) + 1rem + env(safe-area-inset-top, 0px)); }
+@media (hover: hover) {
+  .booking-header__link:hover { border-color: var(--papi-gold-ink); background: var(--papi-gold-soft); box-shadow: var(--papi-shadow-card); }
+}
+@media (min-width: 768px) {
+  .booking-header__inner { display: flex; flex-wrap: wrap; }
+  .booking-header__brand { margin-right: auto; }
+  .booking-header__nav { display: flex; flex-wrap: wrap; }
+}
+@media (max-width: 300px) { .booking-header__nav { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { .booking-header__link { transition: none; } }
