@@ -10,6 +10,8 @@
     "setup": "powershell -ExecutionPolicy Bypass -File ./setup.ps1",
     "dev": "vite",
     "build": "vite build",
+    "build:vercel": "vite build --mode vercel",
+    "build:staging": "vite build --mode staging",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",

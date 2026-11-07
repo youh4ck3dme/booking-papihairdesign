@@ -227,7 +227,7 @@ export default function DiagnosticsPage() {
             <CardContent className="space-y-2 text-sm text-muted-foreground">
               <p>Tabuľky/RPC chýbajú v projekte, na ktorý ukazuje app.</p>
               <p className="font-medium text-foreground">Možnosť 1 (odporúčané):</p>
-              <p>Vercel → Settings → Environment Variables. Nastav <code className="rounded bg-muted px-1">VITE_SUPABASE_URL</code> = <code className="rounded bg-muted px-1">https://eudwjgdijylsgcnncxeg.supabase.co</code> a <code className="rounded bg-muted px-1">VITE_SUPABASE_PUBLISHABLE_KEY</code> = anon key z Supabase projektu eudwjgdijylsgcnncxeg (Dashboard → Settings → API). Ulož a Redeploy.</p>
+              <p>Vercel → Settings → Environment Variables. Nastav URL, ID projektu a verejný kľúč pre schválený Supabase projekt daného prostredia. V Preview musí ref zodpovedať <code className="rounded bg-muted px-1">PAPI_BOOKING_STAGING_SUPABASE_REF</code>. Potom vytvor nový build.</p>
               <p className="font-medium text-foreground">Možnosť 2:</p>
               <p>Spusti migrácie na aktuálny projekt: SQL Editor v Supabase Dashboard (skopíruj <code className="rounded bg-muted px-1">supabase/migrations/run-all.sql</code>) alebo <code className="rounded bg-muted px-1">.\supabase-db-push-psql.ps1 -ProjectRef dssdiqojkktzfuwoulbq</code> (ak host je dssdiqojkktzfuwoulbq).</p>
             </CardContent>
