@@ -9,6 +9,8 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dockerName = `papi-employee-rls-${process.pid}-${Date.now()}`;
 const pgBin = process.env.PAPI_PG_BIN;
 const pgEnv = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('PG')));
+// macOS needs an explicit locale for a postmaster started by the clean sandbox.
+if (pgBin) pgEnv.LC_ALL = 'C';
 let dockerCreated = false;
 let nativeDirectory;
 
@@ -29,7 +31,13 @@ async function startPostgres() {
     command(path.join(pgBin, 'initdb'), ['-D', data, '--username=postgres', '--auth-local=trust', '--auth-host=reject', '--no-locale', '--encoding=UTF8']);
     appendFileSync(path.join(data, 'postgresql.conf'),
       `\nlisten_addresses = ''\nunix_socket_directories = '${nativeDirectory.replaceAll("'", "''")}'\nunix_socket_permissions = 0700\n`);
-    command(path.join(pgBin, 'pg_ctl'), ['-D', data, '-l', path.join(nativeDirectory, 'postgres.log'), '-w', 'start']);
+    const serverLog = path.join(nativeDirectory, 'postgres.log');
+    try {
+      command(path.join(pgBin, 'pg_ctl'), ['-D', data, '-l', serverLog, '-w', 'start']);
+    } catch (error) {
+      if (existsSync(serverLog)) process.stderr.write(readFileSync(serverLog, 'utf8'));
+      throw error;
+    }
     console.log('Local PostgreSQL 18; private Unix socket only. Supabase auth claim primitives are simulated.');
     return;
   }
