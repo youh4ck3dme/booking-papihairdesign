@@ -129,6 +129,12 @@ VITE_SUPABASE_PUBLISHABLE_KEY=tvoj-anon-key
 
 > Hodnoty nájdeš v Supabase dashboarde pod **Settings → API**.
 
+### Izolovaný Booking staging
+
+Vo Verceli nechaj dostupné [systémové premenné](https://vercel.com/docs/environment-variables/system-environment-variables). Pre Preview alebo schválené staging prostredie nastav `PAPI_BOOKING_STAGING_SUPABASE_REF` na schválený testovací ref. V tom istom prostredí nastav `VITE_SUPABASE_PROJECT_ID`, `VITE_SUPABASE_URL` a verejný `VITE_SUPABASE_PUBLISHABLE_KEY` tohto projektu. Produkčný ref, chýbajúci ref a nezhoda medzi URL a ID zastavia build. Premenné pre staging nastav samostatne od produkcie.
+
+Pre ručný staging build použi `pnpm run build:staging` s rovnakými premennými. Pred prihlásením alebo testovacím zápisom potvrď izolovaný ref v nasadenom JavaScripte a v cieľoch čítacích požiadaviek prehliadača. Použi syntetické účty a dáta.
+
 ### Auth na produkčnej doméne (booking.papihairdesign.sk)
 
 Aby prihlásenie fungovalo na **https://booking.papihairdesign.sk**, treba v Supabase nastaviť Site URL a Redirect URLs (cez `.\supabase-push-auth-config.ps1` alebo ručne v Dashboarde). Kompletný postup, čo nerobiť (napr. nevkladať obsah `config.toml` do terminálu) a kde hľadať chybu: **[docs/AUTH-BOOKING-DOMAIN.md](docs/AUTH-BOOKING-DOMAIN.md)**.

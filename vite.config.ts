@@ -6,10 +6,12 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 import { resolvePapiWebsiteUrl } from './src/lib/public-integration-config';
+import { verifyStagingSupabase } from "./scripts/booking-staging-env";
 
 // https://vitejs.dev/config/ – env reload
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), "");
+  const env = loadEnv(mode === "vercel" ? "production" : mode, process.cwd(), "");
+  verifyStagingSupabase(mode, env);
   const stripBom = (value: string | undefined) => (value ?? "").replace(/^\uFEFF/, "").trim();
 
   const supabaseUrl =
@@ -55,7 +57,7 @@ export default defineConfig(({ mode }) => {
         registerType: "prompt",
         includeAssets: ["favicon.ico", "placeholder.svg", "pwa-icon-192.png", "pwa-icon-512.png"],
         workbox: {
-          navigateFallbackDenylist: [/^\/~oauth/],
+          navigateFallbackDenylist: [/^\/~oauth/, /^\/assets(?:\/|$)/, /\.(?:[cm]?js|css)\/?(?:\?|$)/i],
           importScripts: ["/sw-private-cache.js"],
           runtimeCaching: [
             {

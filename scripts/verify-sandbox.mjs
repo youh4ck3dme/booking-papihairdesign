@@ -15,7 +15,7 @@ await mkdir(workspace);
 const logs = path.join(output, 'logs');
 await mkdir(logs);
 // Deliberately do not inherit application credentials, .env files or CI retry settings.
-const env = Object.fromEntries(['PATH', 'HOME', 'TMPDIR', 'TEMP', 'SYSTEMROOT', 'HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY', 'NODE_EXTRA_CA_CERTS', 'SSL_CERT_FILE', 'PLAYWRIGHT_BROWSERS_PATH', 'PLAYWRIGHT_CHROME_BIN']
+const env = Object.fromEntries(['PATH', 'HOME', 'TMPDIR', 'TEMP', 'SYSTEMROOT', 'HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY', 'NODE_EXTRA_CA_CERTS', 'SSL_CERT_FILE', 'PLAYWRIGHT_BROWSERS_PATH', 'PLAYWRIGHT_CHROME_BIN', 'PAPI_PG_BIN']
   .filter(key => process.env[key]).map(key => [key, process.env[key]]));
 Object.assign(env, { TZ: 'UTC', VITE_SUPABASE_URL: 'https://booking-fixture.invalid', VITE_SUPABASE_PROJECT_ID: 'booking-fixture', VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_local_fixture_only' });
 const pnpm = process.env.PAPI_PNPM_CLI ? [process.execPath, process.env.PAPI_PNPM_CLI] : ['pnpm'];

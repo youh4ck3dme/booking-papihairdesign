@@ -199,7 +199,8 @@ serve(async (req) => {
     const totalMinutes = service.duration_minutes + (service.buffer_minutes ?? 0);
     const endDate = new Date(startDate.getTime() + totalMinutes * 60 * 1000);
 
-    // 4. Check for conflicts
+    // 4. Check for conflicts before touching the customer. The database
+    // exclusion constraint is authoritative if two requests pass this check.
     const { data: conflicts } = await supabase
       .from("appointments")
       .select("id")
@@ -266,6 +267,13 @@ serve(async (req) => {
       })
       .select("id")
       .single();
+
+    if (apptErr?.code === "23P01") {
+      return new Response(
+        JSON.stringify({ error: "Tento termín je už obsadený" }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (apptErr || !appointment) {
       console.error("Appointment creation error:", apptErr);
