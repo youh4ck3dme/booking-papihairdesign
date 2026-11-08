@@ -76,6 +76,7 @@ const baseSchema = '20260219160842_ac587df3-28ee-419c-b19e-a20eddc1098d.sql';
 const originalGuard = '20261106192120_employee_dashboard_status_guard.sql';
 const compatibleGuard = '20261107170714_booking_dashboard_auth_compatibility.sql';
 const overlapConstraint = '20261107170725_prevent_overlapping_appointments.sql';
+const publicBooking = '20261108120000_create_public_booking.sql';
 
 function verifyAuth(database, profile) {
   sql('postgres', `CREATE DATABASE ${database};`);
@@ -125,23 +126,16 @@ async function waitUntil(check, failure) {
   throw new Error(typeof failure === 'function' ? failure() : failure);
 }
 
-async function verifyConcurrentBooking(database) {
-  migration(database, overlapConstraint);
-  sql(database, 'GRANT SELECT, INSERT, UPDATE ON public.appointments TO service_role;');
-  const appointment = id => `INSERT INTO public.appointments
-    (id, business_id, customer_id, employee_id, service_id, start_at, end_at, status) VALUES
-    ('f1000000-0000-0000-0000-00000000000${id}', 'a1b2c3d4-0000-0000-0000-000000000001',
-     'd1000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000001',
-     'b1000000-0000-0000-0000-000000000001', '2099-01-01T10:00:00Z', '2099-01-01T11:00:00Z', 'confirmed');`;
-  const transaction = `BEGIN; SET LOCAL ROLE service_role; SET LOCAL statement_timeout = '20s';
+async function verifyContestedWrite(database, role, write) {
+  const transaction = `BEGIN; SET LOCAL ROLE ${role}; SET LOCAL statement_timeout = '20s';
     SET LOCAL idle_in_transaction_session_timeout = '20s';`;
   const first = startSession(database);
   let second;
   try {
-    first.child.stdin.write(`${transaction}\n${appointment(1)}\nSELECT 'first-holds-slot';\n`);
+    first.child.stdin.write(`${transaction}\n${write(1)}\nSELECT 'first-holds-slot';\n`);
     await waitUntil(() => first.output.includes('first-holds-slot'), () => `First booking did not insert: ${first.errors}`);
     second = startSession(database);
-    second.child.stdin.end(`SET application_name = 'booking-overlap-contender';\n${transaction}\n${appointment(2)}\nCOMMIT;\n`);
+    second.child.stdin.end(`SET application_name = 'booking-overlap-contender';\n${transaction}\n${write(2)}\nCOMMIT;\n`);
     await waitUntil(() => sql(database, `SELECT EXISTS (
       SELECT 1 FROM pg_stat_activity WHERE application_name = 'booking-overlap-contender'
       AND wait_event_type = 'Lock' AND cardinality(pg_blocking_pids(pid)) > 0);`) === 't',
@@ -156,8 +150,83 @@ async function verifyConcurrentBooking(database) {
     if (first.child.exitCode === null) first.child.kill();
     if (second?.child.exitCode === null) second.child.kill();
   }
+}
+
+async function verifyConcurrentBooking(database) {
+  migration(database, overlapConstraint);
+  sql(database, 'GRANT SELECT, INSERT, UPDATE ON public.appointments TO service_role;');
+  const appointment = id => `INSERT INTO public.appointments
+    (id, business_id, customer_id, employee_id, service_id, start_at, end_at, status) VALUES
+    ('f1000000-0000-0000-0000-00000000000${id}', 'a1b2c3d4-0000-0000-0000-000000000001',
+     'd1000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000001',
+     'b1000000-0000-0000-0000-000000000001', '2099-01-01T10:00:00Z', '2099-01-01T11:00:00Z', 'confirmed');`;
+  await verifyContestedWrite(database, 'service_role', appointment);
   sql(database, file('tests/booking-overlap.sql'));
   console.log('PASS: two independent service-role transactions contested one slot and exactly one booking committed');
+}
+
+const bookingSignature = 'public.create_public_booking(uuid, uuid, uuid, timestamptz, text, text, text)';
+
+function publicBookingCall(start, email) {
+  return `public.create_public_booking(
+    'a1b2c3d4-0000-0000-0000-000000000001',
+    'b1000000-0000-0000-0000-000000000001',
+    'c1000000-0000-0000-0000-000000000001',
+    '${start}', 'Sandbox Customer', '${email}')`;
+}
+
+function verifyPublicBooking(database, upgrade) {
+  if (upgrade) {
+    migration(database, overlapConstraint);
+    // Restore the observed deployed security settings before replacing the function.
+    migration(database, publicBooking);
+    sql(database, `ALTER FUNCTION ${bookingSignature} SET search_path TO public;
+      GRANT EXECUTE ON FUNCTION ${bookingSignature} TO PUBLIC;`);
+  }
+  migration(database, publicBooking);
+  const permissions = sql(database, `SELECT has_function_privilege('anon', '${bookingSignature}', 'EXECUTE'),
+    has_function_privilege('authenticated', '${bookingSignature}', 'EXECUTE'),
+    has_function_privilege('service_role', '${bookingSignature}', 'EXECUTE'),
+    EXISTS (SELECT 1 FROM pg_proc p, LATERAL aclexplode(p.proacl) a
+      WHERE p.oid = '${bookingSignature}'::regprocedure AND a.grantee = 0);`);
+  if (permissions !== 't|t|t|f') throw new Error(`Unexpected public booking permissions: ${permissions}`);
+
+  const call = publicBookingCall('2099-01-02T10:00:00Z', 'SANDBOX@example.invalid');
+  sql(database, `BEGIN; SET LOCAL ROLE anon;
+    DO $$
+    DECLARE result jsonb; retry_rejected boolean := false;
+    BEGIN
+      result := ${call};
+      IF NOT (result ?& ARRAY['id','business_id','customer_id','service_id','employee_id',
+        'start_at','end_at','status','service_name','service_price','employee_name',
+        'customer_name','customer_email','claim_token'])
+        OR result->>'status' IS DISTINCT FROM 'confirmed'
+        OR result->>'customer_email' IS DISTINCT FROM 'sandbox@example.invalid'
+        OR (result->>'end_at')::timestamptz IS DISTINCT FROM '2099-01-02T10:55:00Z'::timestamptz THEN
+        RAISE EXCEPTION 'Unexpected primary RPC response';
+      END IF;
+      BEGIN
+        PERFORM ${call};
+      EXCEPTION WHEN raise_exception THEN
+        retry_rejected := SQLERRM LIKE 'Vybraný termín je už obsadený%';
+      END;
+      IF NOT retry_rejected THEN RAISE EXCEPTION 'Retry must report a conflict'; END IF;
+    END $$;
+    RESET ROLE;
+    DO $$ BEGIN
+      IF (SELECT count(*) FROM public.appointments WHERE start_at = '2099-01-02T10:00:00Z') <> 1
+        THEN RAISE EXCEPTION 'Retry created a second booking'; END IF;
+    END $$; ROLLBACK;`);
+  console.log(`PASS: ${database} primary RPC ${upgrade ? 'upgrade' : 'clean install'}, grants, response and retry`);
+}
+
+async function verifyConcurrentPublicBooking(database) {
+  const start = '2099-01-03T10:00:00Z';
+  await verifyContestedWrite(database, 'anon', id =>
+    `SELECT ${publicBookingCall(start, `rpc-race-${id}@example.invalid`)};`);
+  const count = sql(database, `SELECT count(*) FROM public.appointments WHERE start_at = '${start}';`);
+  if (count !== '1') throw new Error(`Expected exactly one primary RPC booking, got ${count}`);
+  console.log('PASS: two concurrent anonymous primary RPC calls created exactly one booking');
 }
 
 try {
@@ -166,6 +235,9 @@ try {
   verifyAuth('booking_native_clean', 'native');
   verifyAuth('booking_native_upgrade', 'native-upgrade');
   await verifyConcurrentBooking('booking_native_clean');
+  verifyPublicBooking('booking_native_clean', false);
+  verifyPublicBooking('booking_native_upgrade', true);
+  await verifyConcurrentPublicBooking('booking_native_clean');
 } catch (error) {
   console.error(error.message);
   process.exitCode = 1;
